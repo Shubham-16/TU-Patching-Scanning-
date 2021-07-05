@@ -1,0 +1,19 @@
+---
+  # - name: Perform scan triggering tasks
+  #   block:
+      - name: Include launch scan vars file
+        include_vars: ../vars/vars.yml
+        no_log: True
+      
+      - name: Include generate report vars file
+        include_vars: generate_report/vars/vars.yml
+        no_log: True
+
+      - name: Fetch ids for scan_engine, scan_site, scan_template provided by user
+        include: get_all_ids.yml
+
+      - name: Trigger Scan on provided scan site assets
+        include: trigger_scan1.yml
+    # always:
+    #  - name: Create a log file for scan process
+    #    include: generate_report/tasks/logs.yml

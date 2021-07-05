@@ -1,0 +1,50 @@
+# Copyright: (c) 2021 GS Lab | Ansible
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+- block:
+    - name: Checking Process running or not
+      shell: systemctl show -p ActiveState {{ process_name }} | sed 's/ActiveState=//g'
+      ignore_errors: true
+      register: proccess_status
+      
+    - name: Including details of process status in log file
+      include: log_file.yml
+      vars:
+        content: "Process status for {{ process_name }} is =: {{proccess_status.stdout}}"
+        status: "INFO"
+
+  rescue:
+    - name: Sending an email when failed to check process status.
+      include_role:
+          name: common/send-email
+      vars:
+        mail_subject: Failed to check process status.
+        mail_body: '<p>There are some problems while checking process status on host <b> {{ inventory_hostname }} </b></p>'
+
+    - name: creating log file when failed to check process status
+      include: log_file.yml
+      vars:
+        content: "Failed to check the status of the process."
+        status: "ERROR"
+        
+    - name: Exiting the playbook when failed to check process status
+      fail:
+        msg: "Something went wrong while checking process status."
+    
+
+- name: To display process status
+  debug:
+      msg: "{{ proccess_status.stdout }}"
+
+- name: Sending an email when process are running
+  include_role:
+        name: common/send-email
+  vars:
+      mail_subject: Abort Patching, due to running process.
+      mail_body: '<p> It seems like you have running agent <b>{{ process_name }}</b>, Hence we are aborting the patching operatioin on host <b>{{ inventory_hostname }}</b>,  please stop it before patching.</p>'
+  when: proccess_status.stdout == "active"
+  
+- name: Exiting the playbook
+  fail:
+    msg: "Abort patching due to running process {{ process_name }} on host {{ inventory_hostname }}, Please stop the process before patching."
+  when: proccess_status.stdout == "active"

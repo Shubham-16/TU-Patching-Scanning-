@@ -1,0 +1,6 @@
+---
+    - name: Performing OS patching on RHEL machines.
+      hosts: rhel
+      become: yes
+      roles:
+        - rhel-os-patching

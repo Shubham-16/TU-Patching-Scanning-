@@ -1,0 +1,4 @@
+---
+# vars file for update_inventory
+inventory_name: Transunion
+group_name: rhel

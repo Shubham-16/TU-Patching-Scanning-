@@ -1,0 +1,9 @@
+---
+
+- hosts: localhost
+  # become_method: sudo
+  vars:
+     job_ids: []
+  tasks:
+    - include_role:
+          name: download_job_log

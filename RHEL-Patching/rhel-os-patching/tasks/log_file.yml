@@ -1,0 +1,10 @@
+---
+- block:
+  - set_fact:
+      date: "{{ lookup('pipe', 'date +%Y-%m-%d')}}"
+      time: "{{ lookup('pipe', 'date +%H:%M:%S')}}"
+  - name: Add Details in Log
+    lineinfile:
+      path: /var/log/patching_archive/patching_{{ansible_date_time.date}}_{{ansible_date_time.time}}.log
+      create: yes
+      line: "{{date}} {{time}} {{ansible_default_ipv4.address}} {{status}} - {{content}}"

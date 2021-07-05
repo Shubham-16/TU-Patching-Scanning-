@@ -1,0 +1,131 @@
+---
+
+  - name: Include vars file
+    include_vars: ../vars/vars.yml
+    no_log: True
+
+    
+  - name: Include lauch scan role vars
+    include_vars: ../vars/report_req_vars.yml
+    no_log: True
+
+  - block:
+     - block:
+        - name: Create ip list
+          set_fact:
+            final_list: "{{','.join(final_ip_list)}}"
+
+        - name: Send an email {{date}} {{time}}
+          include_role:
+            name: common/send_email
+          vars:
+            mail_subject: Scan successful
+            mail_body: 'Scaninng has been successfully done on requested scan site {{ scan_site_name }} with assets {{ final_list }}. Please find the link to download the Report:- https://{{insightvm_host}}/api/3/reports/{{configured_report_id}}/history/{{report_instance_id}}/output'
+            #attachment_file:  "/{{ report_directory }}/{{scan_name}}_{{ansible_date_time.date}}_{{ansible_date_time.time}}.csv"
+          
+          # mail:
+          #  host: smtp.gmail.com
+          #  port: 587
+          #  username: "{{smtp_username}}"
+          #  password: "{{smtp_password}}"
+          #  to: "{{email_id}}"
+          #  subject: Scan successful 
+          #  body: 'Hi team, scaninng has been successfully done on requested scan site {{ scan_site_name }} with assets {{}}.'
+          #  attach: "/{{ report_directory }}/{{scan_name}}_{{ansible_date_time.date}}_{{ansible_date_time.time}}.csv"
+          # delegate_to: localhost
+        - debug:
+           msg: "scan done"
+       when:  flag  == false 
+    
+
+     - name: Perform tasks to create a work order on bmc Remedy if vulnerabilities are found on assets {{date}} {{time}}
+       block:
+
+        - name: Create ip list
+          set_fact:
+            asset_list: "{{','.join(vulnerable_ips)}}"
+        
+        - name: Create a zip format of report file
+          archive:
+           path: /{{ report_directory }}/{{scan_name}}_{{ansible_date_time.date}}_{{ansible_date_time.time}}.csv
+           format: zip
+
+        
+        - name: Send an email with report
+          include_role:
+            name: common/send_email
+          vars:
+            mail_subject: Vulnerabilities found on assets by scan {{scan_name}}
+            mail_body: 'Scaninng has been successfully done on requested scan site {{ scan_site_name }} with assets {{ asset_list }} identified for vulnerabilities. Please find the link to download the report:- https://{{insightvm_host}}/api/3/reports/{{configured_report_id}}/history/{{report_instance_id}}/output.'
+            #attachment_file: "/{{ report_directory }}/{{scan_name}}_{{ansible_date_time.date}}_{{ansible_date_time.time}}.csv.zip"   
+       
+        - name: Authenticate to bmc Remedy AR system and generate a token {{date}} {{time}}
+          #ignore_errors: true
+          uri:
+            url: https://{{bmc_remedy_host}}/api/jwt/login
+            # headers:
+            #  - Content-Type: "application/x-www-form-urlencoded"
+            body_format: form-urlencoded
+            body: "username={{bmc_remedy_user}}&password={{bmc_remedy_password}}"
+            method: POST
+            status_code : 200
+            return_content: yes
+            validate_certs: no
+          register: authorised_token
+        - debug:
+           msg: "Token is {{authorised_token.content}}"
+
+  
+        - name: Creating a bmc Remedy work order {{date}} {{time}}
+          ignore_errors: false
+          uri:
+            url: https://{{bmc_remedy_host}}/api/arsys/v1/entry/WOI:WorkOrderInterface_Create/
+            method: POST
+            validate_certs: no
+            headers:
+              Authorization: "AR-JWT {{authorised_token.content}}"
+              Content-Type: "Application/Json"
+            body_format: json
+            body: '{
+              "values": {
+            "Detailed Description": "Scan report url https://{{insightvm_host}}/api/3/reports/{{configured_report_id}}/history/{{report_instance_id}}/output",
+            "z1D_Action": "CREATE",
+            "First Name": "{{ first_name }}",
+            "Last Name": "{{ last_name }}",
+            "Summary": "Vulnerability found on assets for scan {{ scan_name }}-{{ asset_list }}",
+            "Status": "Assigned",
+            "TU_ReportedSource": "Direct Input",
+            "RequesterLoginID": "{{ requester_loginid }}",
+            "Assignee Groups": "{{ wo_assignee_group_id }}"
+            }}'
+            status_code: 201
+          register: work_order_created
+        - debug:
+           msg: "WO Response:- {{work_order_created}}"
+        
+        # - name: Send an email with report
+        #   include_role:
+        #     name: common/send_email
+        #   vars:
+        #     mail_subject: Vulnerabilities found on assets by scan {{scan_name}}
+        #     mail_body: 'Scaninng has been successfully done on requested scan site {{ scan_site_name }} with assets {{ asset_list }} identified for vulnerabilities. Please find the link to download the report:- https://{{insightvm_host}}/api/3/reports/{{configured_report_id}}/history/{{report_instance_id}}/output.'
+        #     #attachment_file: "/{{ report_directory }}/{{scan_name}}_{{ansible_date_time.date}}_{{ansible_date_time.time}}.csv.zip"
+         
+
+       when:  flag  == true 
+    
+    rescue:
+      - name: Send an email if any task fails {{date}} {{time}}
+        include_role:
+         name: common/send_email
+        vars:
+         mail_subject: Failed to create a work order on bmc Remedy ITSM for {{scan_name}}
+         mail_body: 'Failed to create work order on bmc Remedy ITSM for {{scan_site_name}} and scan name {{scan_name}}.Please check log file for more details,sent on a seperate email.'
+        
+          
+      - name: Abort this role tasks execution if no work order was created{{date}} {{time}}
+        fail:
+          msg: Aborting playbook execution, as scan launch failed
+        when:  authorised_token.status  != 201 or  work_order_created.status  != 201
+    
+ 

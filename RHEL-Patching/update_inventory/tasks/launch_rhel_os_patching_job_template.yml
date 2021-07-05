@@ -1,0 +1,22 @@
+---
+# tasks file for launching RHEL OS Patching job template with limit parameter ( list of provider hosts )
+
+- name: Launch the RHEL OS Patching job template.
+  block:
+    - name: Launch the RHEL OS Patching job template.
+      uri:
+        url: "https://{{ lookup('env', 'TOWER_HOST') }}/api/v2/job_templates/{{ rhel_os_patching_job_template_id }}/launch/"
+        method: POST
+        user: "{{ lookup('env', 'TOWER_USERNAME') }}"
+        password: "{{ lookup('env', 'TOWER_PASSWORD') }}"
+        body_format: json
+        body: {
+          "limit": "{{ ip }}"
+        }
+        force_basic_auth: yes
+        validate_certs: no
+        return_content: no
+        status_code: 201
+  rescue:
+    - fail:
+        msg: "Problem While Launching the job template"

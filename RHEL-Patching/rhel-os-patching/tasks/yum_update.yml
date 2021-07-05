@@ -1,0 +1,34 @@
+---
+   # this task will upgrade all packages on RHEL server.
+    - name: upgrade all packages on host "{{ inventory_hostname }}"
+      yum:
+        name: "*"
+        state: latest
+      register: yum_update
+      until: yum_update.failed == false
+      retries: "{{ yum_update_retries }}"
+      delay: "{{ yum_update_delay }}"
+      ignore_errors: yes
+
+    - name: Create a file with content of patch details.  
+      delegate_to: localhost
+      become: no
+      copy:
+        dest: "/tmp/patching_details.txt"
+        content: |
+                 {{ yum_update }}
+      when: yum_update.failed or yum_update
+
+    - name: Sending an email when patch fails
+      include_role:
+        name: common/send-email
+      vars:
+          mail_subject: Failed to patch host 
+          mail_body: '<p>Something went wrong while performing patching on host <b> {{ inventory_hostname }} </b>, kindly refer following attachement for more details </p>'
+          attachment_file: "/tmp/patching_details.txt"
+      when: yum_update.failed
+
+    - name: Exiting the playbook
+      fail:
+        msg: "Failed to patch"
+      when: yum_update.failed

@@ -1,0 +1,13 @@
+- name: Server configurations
+  shell: |
+      mkdir /var/log/bkp_{{date}}_{{time}} ;cd /var/log/bkp_{{date}}_{{time}}; ifconfig -a |tee if config ; cat /etc/fstab| tee ftsab; df -hP | tee df; netstat -nr | tee netstat; vgdisplay | tee vg; lvdisplay | tee lv; mount | tee mount; cat /etc/resolv.conf | tee resolve.conf; clustat | tee cluster; crm status >> cluster ; dmidecode -bios >demidecode; dmidecode -t1 >> dmidecode; fdisk -l| tee fdisk; multipath -ll | tee multipath; cat /etc/hosts | tee hosts;
+  register: pre_checks
+
+- name: Including details about the server confi in log file
+  include: log_file.yml
+  vars:
+     content: "Fetching the details of the host before and after the patching and storing it /var/log/patching_archive"
+     status: "INFO"
+  when: pre_checks
+ 
+

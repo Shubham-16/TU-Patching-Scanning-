@@ -1,0 +1,78 @@
+--- 
+  - block:
+     - name: Include vars file
+       include_vars: ../vars/vars.yml
+       no_log: True
+
+     - name: Include lauch scan role vars
+       include_vars: ../vars/report_req_vars.yml
+       no_log: True
+
+     - name: Create a directory to store scanning process log files {{date}} {{time}}
+       file:
+        path: /{{scan_logs_directory}}
+        state: directory
+    
+     - name: Create a log file at /var/log/scanning_logs {{date}} {{time}}
+       command: touch /{{scan_logs_directory}}/{{scan_name}}_{{ansible_date_time.date}}_{{ansible_date_time.time}}.log
+
+   
+     - name: Fetch job template log {{date}} {{time}}
+       uri:
+        url: https://{{ansibletower_host}}/api/v2/jobs/{{tower_job_id}}/stdout/?format=txt_download
+        user: "{{ansibletower_user}}"
+        password: "{{ansibletower_password}}"
+        method: GET
+        return_content: yes
+        validate_certs: no
+        force_basic_auth: yes
+        status_code: 200
+       register: job_template_logs
+     
+     - name: Add log contents to file {{date}} {{time}}
+       copy:
+        content: "{{job_template_logs.content}}"
+        dest: /{{scan_logs_directory}}/{{scan_name}}_{{ansible_date_time.date}}_{{ansible_date_time.time}}.log
+       delegate_to: localhost
+
+     - name: Send an email with scanning process log file {{date}} {{time}}
+       include_role:
+        name: common/send_email
+       vars:
+        mail_subject:  Scanning Log file for {{scan_name}}
+        mail_body: 'Please find the attached log file for scan {{scan_name}} on Rapid7 InsightVM'
+        attachment_file: "/{{scan_logs_directory}}/{{scan_name}}_{{ansible_date_time.date}}_{{ansible_date_time.time}}.log"
+      #  mail:
+      #   host: smtp.gmail.com
+      #   port: 587
+      #   username: "{{smtp_username}}"
+      #   password: "{{smtp_password}}"
+      #   to: "{{ email_id }}"
+      #   subject: Scanning Log file for {{scan_name}}
+      #   body: 'Hi team, please find the attached log file for scan {{scan_name}} on Rapid7 InsightVM'
+      #   attach: "/{{scan_logs_directory}}/{{scan_name}}_{{ansible_date_time.date}}_{{ansible_date_time.time}}.log"
+       
+        
+
+    rescue:
+     - name: Send an email if any task fails {{date}} {{time}}
+       include_role:
+        name: common/send_email
+       vars:
+        mail_subject: Failed to create logs for scan completed {{ scan_name }}
+        mail_body: 'Hi team, scan log creation task failed for scanning on this site {{ scan_site_name }} and for scan {{scan_name}} Following is the issue: {{job_template_logs.content}}.'
+      #  mail:
+      #   host: smtp.gmail.com
+      #   port: 587
+      #   username: "{{smtp_username}}"
+      #   password: "{{smtp_password}}"
+      #   to: "{{ email_id }}"
+      #   subject: Failed to create logs for scan completed {{ scan_name }}
+      #   body: 'Hi team, scan log creation task failed for scanning on this site {{ scan_site_name }} and for scan {{scan_name}} Following is the issue: {{job_template_logs.content}}.'
+      #  delegate_to: localhost
+          
+    # - name: Abort this role tasks execution if no scan was triggered
+    #   fail:
+    #     msg: Aborting playbook execution, as scan launch failed
+    #   when: 
+    

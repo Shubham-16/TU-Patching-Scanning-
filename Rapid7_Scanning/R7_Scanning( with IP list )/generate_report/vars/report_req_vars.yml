@@ -1,0 +1,61 @@
+report_req_body : {
+      "filters": {
+      "severity": "critical",
+      "statuses": ["all"]
+},
+      "format": "sql-query",
+      "language": "en-US",
+      "name": "{{ scan_report_name }}",
+      "query": "{{ sql_query }}",
+      "scope": {
+        "scan": "{{ site_scan_id }}"
+      },
+      "template": "executive-overview",
+      "timezone": "Asia/Calcutta",
+      "version": "2.3.0"
+
+  }
+retry_no: 100
+delay_time: 120
+#report_directory: root/Rapid7_Scan_Reports2
+report_directory: var/log/Rapid7_Scan_Reports
+scan_logs_directory: var/log/Rapid7_Scan_Logs
+date: "{{ lookup('pipe', 'date +%Y-%m-%d')}}"
+time: "{{ lookup('pipe', 'date +%H:%M:%S')}}"
+#work order service request parameters
+first_name: "xyz"
+last_name: "abc"
+requester_loginid: "abhosal"
+customer_first_name: ""
+customer_last_name: ""
+company_name: ""
+customer_company: ""
+company_location: ""
+wo_assignee_group_id: "2000000165" #helpdesk_india id in dev group
+
+# wo_req_body1: '{
+#               "values": {
+#             "Detailed Description": "Scan report url https://{{insightvm_host}}/api/3/reports/{{configured_report_id}}/history/{{report_instance_id}}/output",
+#             "z1D_Action": "CREATE",
+#             "First Name": "{{ first_name }}",
+#             "Last Name": "{{ last_name }}",
+#             "Summary": "Vulnerability found on assets for scan {{ scan_name }}-{{ asset_list }}",
+#             "Status": "Assigned",
+#             "TU_ReportedSource": "Direct Input",
+#             "RequesterLoginID": "{{ requester_loginid }}"
+#             }}'
+
+wo_req_body2: '{
+              "values": {
+            "Detailed Description": "Scan report url https://{{insightvm_host}}/api/3/reports/{{configured_report_id}}/history/{{report_instance_id}}/output",
+            "z1D_Action": "CREATE",
+            "First Name": "{{ first_name }}",
+            "Last Name": "{{ last_name }}",
+            "Summary": "Vulnerability found on assets for scan {{ scan_name }}-{{ asset_list }}",
+            "Status": "Assigned",
+            "TU_ReportedSource": "Direct Input",
+            "RequesterLoginID": "{{ requester_loginid }}"
+            "Assignee Groups" : "{{ wo_assignee_group_id }}"
+            }}'
+
+

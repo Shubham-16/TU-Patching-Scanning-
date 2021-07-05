@@ -1,0 +1,150 @@
+---
+  - name: Including satellite parameters from vault file
+    include_vars: "{{ vault_file_path }}"
+
+  - name: make host entry
+    lineinfile:
+      path: /etc/hosts
+      line: "{{ satellite_host}} {{ satellite_fqdn }}"
+    register: host_entry
+    
+  - include: log_file.yml
+    vars:
+      content: "Making satellite ip entry on /etc/hosts file"
+      status: "INFO"
+    when: host_entry
+
+  - name: Checking of repo URL
+    action: uri url=http://{{ satellite_fqdn }}/pub/ return_content=yes
+    register: test_repo
+    ignore_errors: true
+
+  - include: log_file.yml
+    vars:
+      content: "Checking the satellite url:= {{test_repo}}"
+      status: "INFO"
+    when: test_repo
+
+  - name: Sending an email when registration of host fails
+    include_role:
+      name: common/send-email
+    vars:
+      mail_subject: Invalid Satellite IP or FQDN
+      mail_body: '<p>It seems you are passing wrong Satellite IP, Fail to register <b>{{ inventory_hostname }}</b> on satellite <b> {{satellite_host}}</b> </p>'
+    when: test_repo.failed
+
+  - name: Including details about regestration of host in log  
+    include: log_file.yml
+    vars:
+      content: "Sending an email about Satellite IP or FQDN is invalid for the host {{inventory_hostname}}."
+      status: "ERROR"
+    when: test_repo.failed
+
+  - name: Exiting the playbook when there is invalid satellite host information
+    fail:
+      msg: "Failed to patch due to invalid satellite host"
+    when: test_repo.failed
+
+  - name: download script file
+    get_url:
+      url: "http://{{ satellite_fqdn }}/pub/katello-ca-consumer-latest.noarch.rpm"
+      dest: "{{home_path}}"
+    when: test_repo.failed != true
+    register: script_download
+
+  - include: log_file.yml
+    vars:
+      content: "Downloading the script file at {{home_path}} to register host to satellite."
+      status: "INFO"
+    when: script_download
+
+  - name: run the script 
+    command: yum localinstall katello-ca-consumer-latest.noarch.rpm -y
+    register: script_status
+    when: script_download.failed != true
+
+  - include: log_file.yml
+    vars:
+      content: "Running the local katello-ca-consumer-latest.noarch.rpm script to register the host {{inventory_hostname}} to satellite"
+      status: "INFO"
+    when: script_status
+
+  - name: Sending an email when katello script fails
+    include_role: 
+      name: common/send-email
+    vars:
+      mail_subject: Failed to run Katello Script
+      mail_body: '<p>Hi Team,</p> <br>There are some problems while running Katello script on host<b>{{ inventory_hostname }}</b></p>'
+    when: script_status.failed
+
+  - name: Including details when katello agent fails in log
+    include: log_file.yml
+    vars:
+      content: "Fail to run Katello Script on host {{inventory_hostname }}.More info {{script_status}}"
+      status: "ERROR"
+    when: script_status.failed
+
+  - name: some prechecks
+    shell: |
+        subscription-manager clean
+
+  - name: register the host to satellite
+    shell: |
+      subscription-manager register --org={{ satellite_organization }} --activationkey={{ satellite_activationkey }}
+    register: sat_regis
+    until: sat_regis.failed == false
+    retries: "{{ register_retries }}"
+    delay: "{{ register_delay }}"
+    ignore_errors: true
+    
+  - include: log_file.yml
+    vars:
+      content: " Fail to register the host {{inventory_hostname}} to satellite. More Info:: {{sat_regis.stderr}}"
+      status: "ERROR"
+    when: sat_regis
+
+  - name: Sending an email when host registered with sattellite
+    include_role:
+      name: common/send-email
+    vars:
+      mail_subject: Successfully registered host with satellite.
+      mail_body: '<p> We have successfully registered host  <b>{{ inventory_hostname }}</b> on satellite <b> {{satellite_host}} </b></p>'
+    when: sat_regis
+
+  - name: Sending an email when registration of host fails
+    include_role:
+      name: common/send-email
+    vars:
+      mail_subject: Failed to Register host on Satellite.
+      mail_body: '<p> There are some problems while registering host <b>{{ inventory_hostname }}</b> on satellite <b> {{satellite_host}} </b></p>'
+    when: sat_regis.failed
+  
+  - name: Including details when host registration fails in log
+    include: log_file.yml
+    vars:
+      content: "Sending an Email to the user about the register to the host {{inventory_hostname}} to satellite fails"
+      status: "ERROR"
+    when: sat_regis.failed
+
+  - name: Exiting the playbook when registration of host with satellite failed
+    fail:
+      msg: "Something went wrong when registration of host with satellite "
+    when: sat_regis.failed
+
+  #  - name: Enable repos for the host
+  #    shell: subscription-manager repos --enable rhel-7-server-satellite-tools-6.8-rpms     
+  - name: Install katello-agent
+    yum:
+      name: katello-agent
+      state: latest
+    ignore_errors: true
+    when: sat_regis.failed != true
+    
+  - include: log_file.yml
+    vars:
+      content: "Installing the Katello-agent on the host {{inventory_hostname}} via satellite"
+      status: "INFO"
+    when: sat_regis
+  #  - name: Disable repos for the host
+  #    shell: subscription-manager repos --disable rhel-7-server-satellite-tools-6.8-rpms
+

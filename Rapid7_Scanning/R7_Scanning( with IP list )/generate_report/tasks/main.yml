@@ -1,0 +1,28 @@
+---
+  # - name: Perform tasks for report creation
+  #   block:
+      - name: Include vars file 
+        include_vars: ../vars/vars.yml
+        no_log: True
+
+      - name: Include lauch scan role vars 
+        include_vars: ../vars/report_req_vars.yml
+        no_log: True
+
+      - name: Get launched scan status on Rapid7 InsightVM {{date}} {{time}}
+        include: get_scan_status.yml
+
+      - name: Check if scan state is failed/aborted/stopped {{date}} {{time}}
+        include: scan_state_failed.yml
+
+      - name: Check if scan state is completed/finished {{date}} {{time}}
+        include: scan_status_completed.yml
+      
+      - name: Check if assets have any vulnerabilties {{date}} {{time}}
+        include: asset_vulnerabilities_check.yml
+
+    # always:
+    #   - name: Create a log file for scan process
+    #     include: logs.yml
+  
+  

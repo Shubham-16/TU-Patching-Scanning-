@@ -1,0 +1,25 @@
+---
+- name: restart system
+  command: shutdown -r +1  "Rebooting System After Patching"
+  async: 0
+  poll: 0
+  register: reboot_started
+  ignore_errors: true
+
+# this task is to wait for 3 minutues for system to come up after the reboot
+- name: pause for 180 secs
+  pause:
+    minutes: "{{ waiting_time }}"
+
+# this task is to confirm,system is up and responding to ssh
+- name: checking if system responding to ssh
+  delegate_to: localhost
+  become: no
+  local_action:
+    module: wait_for
+      host={{ inventory_hostname }}
+      port=22
+      delay=15
+      timeout=300
+      state=started
+  ignore_errors: true

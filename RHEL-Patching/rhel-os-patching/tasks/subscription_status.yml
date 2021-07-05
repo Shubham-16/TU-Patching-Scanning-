@@ -1,0 +1,37 @@
+---
+  # Checking whether VM is registered with satellite or not.
+  - name: checking status of the host(VM)  
+    become: yes
+    shell: subscription-manager status | sed -n 's/.*Status:\ //p'
+    ignore_errors: true
+    register: res
+  - include: log_file.yml
+    vars:
+      content: "Subscribtion status of the host is {{res}}"
+      status: "INFO"
+    when: res
+
+  - name: testing subscription-manager status
+    debug:
+      msg: "{{res}}"
+
+  - block: 
+      - name: Clean and unregister subscription before registering
+        become: yes
+        shell: |
+              subscription-manager unregister
+              subscription-manager clean
+              yum clean all
+              rm -rf /var/cache/yum/*
+              rm -rf /etc/sysconfig/rhn/systemid
+        when: res.stdout_lines[0] == "Unknown"
+      
+    rescue:
+      - name: Exiting the playbook due to failure in task
+        fail:
+          msg: "Something went wrong while cleaning the host."
+      
+      - include: log_file.yml
+        vars:
+            content: "Something went wrong while cleaning the host {{inventory_hostname}}"
+            status: "ERROR" 

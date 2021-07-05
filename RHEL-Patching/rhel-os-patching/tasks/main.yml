@@ -1,0 +1,135 @@
+# Copyright: (c) 2021 GS Lab | Ansible
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+
+---
+- block:
+    - name: include vault_files
+      include_vars: "{{ vault_file_path }}"
+
+    - name: Checking process status
+      include: check_process.yml
+
+    - name: Checking disk space
+      include: disk_space.yml
+    
+    - name: Checking Uptime
+      include: check_uptime.yml
+
+    - name: Checking the subscription status   
+      include: subscription_status.yml
+
+    - name: To register the host with satellite
+      include: register_host.yml
+      when: res.stdout_lines[0] == "Unknown"
+
+    # Checkig subscription status again after registering host with satellite
+    - name: Checking subscription status after registering host   
+      include: subscription_status.yml
+
+    - name: Sending an email when registration of host fails with 3 attempts
+      include_role:
+        name: common/send-email
+      vars:
+          mail_subject: Failed to Register host on Satellite.
+          mail_body: '<p> There are some problems while registering host <b>{{ inventory_hostname }}</b> on satellite <b> {{satellite_host}} </b> </p>'
+      when: res.stdout_lines[0] != "Current"
+
+    - name: Including details about the registration of host in log file
+      include: log_file.yml
+      vars:
+        content: "Failed to register the host {{ inventory_hostname }} to satellite."
+        status: "ERROR"
+      when: res.stdout_lines[0] != "Current"
+
+    - name: Sending an email when ready to patch.
+      include_role:
+        name: common/send-email
+      vars:
+          mail_subject: Patching will start soon.
+          mail_body: '<p> We are ready to patch on host <b> {{ inventory_hostname }} </b>, we will notify you after patching. </p>'
+      when: proccess_status.stdout == "inactive" and disk_space_status.stdout == "suffiecient_space" and res.stdout_lines[0] == "Current"
+      
+    - name: Including details about the patch in log file
+      include: log_file.yml
+      vars:
+        content: " Sending the email for patching, Patching will begin soon on host {{ inventory_hostname }}"
+        status: "INFO"
+      when: proccess_status.stdout == "inactive" and disk_space_status.stdout == "suffiecient_space" and res.stdout_lines[0] == "Current"
+
+    - name: Pre validation checks of a host
+      include: patch.yml
+      vars:
+        date: "{{ lookup('pipe', 'date +%Y-%m-%d')}}"
+        time: "{{ lookup('pipe', 'date +%H:%M:%S')}}"
+      when: proccess_status.stdout == "inactive" and disk_space_status.stdout == "suffiecient_space" and res.stdout_lines[0] == "Current"
+
+    - name: Upgrade all packages ( yum update )  
+      include: yum_update.yml
+      when: proccess_status.stdout == "inactive" and disk_space_status.stdout == "suffiecient_space" and res.stdout_lines[0] == "Current"
+      
+    - name: Including patching details in log file  
+      include: log_file.yml
+      vars:
+        content: "Patching performed successfully on host {{inventory_hostname}}"
+        status: "INFO"
+      when: yum_update
+
+    - name: check for kernel updates   
+      include: check_kernel.yml
+
+    - name: Sending an email after successful patching.
+      include_role:
+        name: common/send-email
+      vars:
+          mail_subject: Patching performed successfully.
+          mail_body: '<p>Patching on host <b>{{ inventory_hostname }}</b> has completed successfully. Kindly refer attached file for more details</p>'
+          attachment_file: "/tmp/patching_details.txt"
+      when: proccess_status.stdout == "inactive" and disk_space_status.stdout == "suffiecient_space" and res.stdout_lines[0] == "Current" and yum_update
+      
+    - name: Including details of successful patching in log file.  
+      include: log_file.yml
+      vars:
+        content: "Sending an email of successfull patching to the user. More Info check your Email"
+        status: "INFO"
+      when: proccess_status.stdout == "inactive" and disk_space_status.stdout == "suffiecient_space" and res.stdout_lines[0] == "Current" and yum_update
+
+    - name: Post validation checks of a host
+      include: patch.yml
+      vars:
+        date: "{{ lookup('pipe', 'date +%Y-%m-%d')}}"
+        time: "{{ lookup('pipe', 'date +%H:%M:%S')}}"
+    
+    - name: difference in system configuration before patching and after patching
+      shell: |
+        cd /var/log/
+        diff -y --suppress-common-lines bkp_*  | wc -l
+      register: diff_out
+      ignore_errors: true
+
+    - name: Including details about the difference of pre and post config in log
+      include: log_file.yml
+      vars:
+          content: "Fetching the difference of both pre configuration and post configuration of host state and check whether patch happens or not."
+          status: "INFO"
+      when: diff_out
+
+    - name: debug diff of worldcount
+      debug:
+        msg: "{{diff_out.stdout}}"
+  
+  always:
+    - name: Creates archive directory to move bkp files
+      file:
+        path: /var/log/patching_archive
+        state: directory
+    
+    - name: Copy all the previously created bkp files to archive folder
+      shell: |
+          cd /var/log/
+          mv bkp_* /var/log/patching_archive
+      when: ( pre_checks is defined ) and (pre_checks | length > 0)
+      ignore_errors: true
+
+    - name: cleanup all unused created files
+      include: cleanup.yml

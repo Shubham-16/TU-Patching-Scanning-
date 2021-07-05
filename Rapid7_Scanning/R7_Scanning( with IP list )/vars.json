@@ -1,0 +1,11 @@
+{
+    "scan_site_name":"Mumbai, India - INTERNAL - [DC] - [NONE] - [CIBIL, CORP, localhost]",
+    "scan_template":"*TU 40/8 Full audit",
+    "scan_engine_name":"CIBIL - India - MIO3L9SC975",
+    "scan_name":"test-scan01",
+    "ip_address": "10.100.80.158",
+    "scan_report_name":"test-report-001",
+    "sql_query":"SELECT distinct(daga.asset_id), da.ip_address, da.host_name, dag.name AS asset_group FROM fact_asset_group fag JOIN dim_asset_group dag USING (asset_group_id) JOIN dim_asset_group_asset daga USING (asset_group_id) JOIN dim_asset da USING (asset_id) ORDER BY dag.name"
+
+
+}

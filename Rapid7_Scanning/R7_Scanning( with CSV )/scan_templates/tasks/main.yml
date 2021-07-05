@@ -1,0 +1,37 @@
+---
+ - name: Include vars
+   include_vars: scan_sites/vars/vars.yml
+
+ - name: Get all scan templates
+   uri:
+    url: https://{{ insightvm_host }}/api/3/scan_templates
+    user: "{{ insightvm_user }}"
+    password: "{{ insightvm_password }}"
+    validate_certs: no
+    method: GET
+    force_basic_auth: yes
+    status_code: 200
+   register: scan_templates
+
+ - name: Create a scan templates' list
+   set_fact:
+    scan_templates_list: "{{ scan_templates_list + [item.name] }}"
+   with_items:
+    "{{scan_templates.json.resources}}"
+ - debug:
+    msg: "scan templates list is {{ scan_templates_list }}"
+  
+ - name: Populate scan engines as a list in survey
+   uri:
+    url: https://{{ansible_tower}}/api/v2/job_templates/{{job_templateID}}/survey_spec/
+    user: "{{ansible_user}}"
+    password: "{{ansible_password}}"
+    method: POST
+    body_format: json
+    body: "{{survey_spec_body}}"
+    validate_certs: no
+    force_basic_auth: yes
+    status_code: 200
+   register: output_scan_engines
+     
+  

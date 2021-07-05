@@ -1,0 +1,31 @@
+---
+
+- name: Create an IP address list
+  set_fact:
+    ip_list: "{{ ip.split(',') }}"   
+
+- name: List all IP passed from survey
+  debug: 
+    msg: "IPs passed from survey ---- {{ ip_list }}" 
+
+- name: Filter out the valid IPv4 address
+  set_fact:
+        valid_ip_list: "{{ valid_ip_list + [item] }}"
+  when: item | ipv4 != false
+  loop: "{{ ip_list }}"
+
+- name: Print all Invalid IPv4 address
+  debug:
+      msg: "Invalid IPv4 addresses -- {{ ip_list | difference(valid_ip_list) }}"
+
+- name: Send Email if no valid IPv4 adrress available 
+  include_role:
+    name: common/send-email
+  vars:
+    mail_subject: No Valid IPv4 address available
+    mail_body: '<p>There are No Valid IPv4 address to create patch configuration, hence aborting the template. For detailed information, check log attached in seperate email</p>' 
+  when: valid_ip_list | length == 0
+
+- fail:
+      msg: "There are No Valid IPv4 address to create patch configuration, hence aborting the template. For detailed information, check log attached in seperate email"
+  when: valid_ip_list | length == 0

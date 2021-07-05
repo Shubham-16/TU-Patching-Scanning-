@@ -1,0 +1,27 @@
+---
+ - name: Include vars
+   include_vars: ../vars/vars.yml
+ 
+ - name: Include request vars
+   include_vars: ../vars/request-vars.yml
+
+ - name: Get all scan sites
+   uri:
+    url: https://{{ insightvm_host }}/api/3/sites
+    user: "{{ insightvm_user }}"
+    password: "{{ insightvm_password }}"
+    validate_certs: no
+    method: GET
+    force_basic_auth: yes
+    status_code: 200
+   register: scan_sites
+   
+ - name: Create a scan sites' names list
+   set_fact:
+    scan_sites_list: "{{ scan_sites_list + [item.name] }}"
+   with_items:
+    "{{scan_sites.json.resources}}"
+ - debug:
+    msg: "scan site list is {{ scan_sites_list }}"
+ 
+ 

@@ -1,0 +1,8 @@
+- hosts: localhost
+  connection: local
+  vars:
+    valid_hosts: []
+  tasks:
+    # Including role to Add hosts to ansible tower inventory from CSV file and launch RHEL OS patching job template againts that hosts.
+    - include_role:
+          name: rhel_master

@@ -1,0 +1,4 @@
+---
+ - hosts: localhost
+   roles:
+    - scan_sites

@@ -1,0 +1,9 @@
+---
+manageengine_server: 192.168.49.72:8383
+user: shubkum
+pass: Anst2011pocpatch
+host: smtp.corp.transunion.com
+port: 25
+#username: 
+#password: 
+to: Shubham.Kumar2@transunion.com

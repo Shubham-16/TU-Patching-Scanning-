@@ -1,0 +1,52 @@
+# Copyright: (c) 2021 GS Lab | Ansible
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+
+---
+# this tasks are to check if kernel update happend and system needs reboot ot not, and reboot the system accordingly.   
+- block:
+    - name: check if reboot required after kernel update or not
+      shell: KERNEL_PREVIOUS=$(rpm -q --last kernel |head -1 | awk '{print $1}' | sed 's/kernel-//'); KERNEL_NOW=$(uname -r); if [[ $KERNEL_PREVIOUS != $KERNEL_NOW ]]; then echo "reboot_needed"; else echo "reboot_not_needed"; fi
+      register: reboot_required
+      
+    - name: Including details in the log file
+      include: log_file.yml
+      vars:
+        content: "check if reboot required after kernel update or not:= {{reboot_required}}"
+        status: "INFO"
+  rescue:
+    - name: Sending an email when failed to check kernel version.
+      include_role:
+        name: common/send-email
+      vars:
+          mail_subject: Failed to check Kernel Versions.
+          mail_body: '<p>There are some problems while checking the kernel version before and after patching on host <b>{{ inventory_hostname }}</b> </p>'
+      
+    - name: Including error details in log file
+      include: log_file.yml
+      vars:
+        content: "Fail to check kernel Version for the host {{ inventory_hostname }}"
+        status: "ERROR"
+
+    - name: Exiting the playbook due to failure in task
+      fail:
+        msg: "Something went wrong while calculating difference between previous and latest kernel version."
+
+# Reboot the system when kernel version updated after patching. 
+- name: Rebooting the system due to kernel version update
+  include: reboot-system.yml
+  when: reboot_required.stdout == "reboot_needed"
+  
+- name: Including details when reboot is required
+  include: log_file.yml
+  vars:
+      content: "System rebooted due to kernel version updated"
+      status: "INFO"
+  when: reboot_required.stdout == "reboot_needed"
+
+- name: Including details when reboot is not required
+  include: log_file.yml
+  vars:
+      content: "Reboot not required , no new update of kernel version"
+      status: "INFO"
+  when: reboot_required.stdout != "reboot_needed"

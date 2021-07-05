@@ -1,0 +1,14 @@
+---
+# tasks file for manage_engine
+- name: Include vault file
+  include_vars: ../vars/vault.yml
+  no_log: True
+
+- name: Read CSV while to fetch IPs and filter out Valid IPv4 addresses
+  import_tasks: fetch_ips_from_csv.yml
+
+- name: Create Patch Configuration
+  import_tasks: create_patch_configuration.yml
+
+- name: Check Patch Configuration
+  import_tasks: check_configuration.yml

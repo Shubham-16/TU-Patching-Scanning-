@@ -1,0 +1,56 @@
+---
+# vars file for populate_survey
+manageEngine_workflow_template_id: 10
+survey_body: {
+    "name": "",
+    "description": "",
+    "spec": [
+        {
+            "question_name": "Config label",
+            "question_description": "Configuration label",
+            "required": true,
+            "type": "text",
+            "variable": "label",
+            "min": 0,
+            "max": 1024,
+            "default": "",
+            "choices": "",
+            "new_question": true
+        },
+        {
+            "question_name": "Config description",
+            "question_description": "Configuration description",
+            "required": true,
+            "type": "text",
+            "variable": "description",
+            "min": 0,
+            "max": 1024,
+            "default": "",
+            "choices": "",
+            "new_question": true
+        },
+        {
+            "question_name": "Deployment Policies",
+            "question_description": "Select a deployment policy",
+            "required": true,
+            "type": "multiplechoice",
+            "variable": "deployment_policy",
+            "min": null,
+            "max": null,
+            "default": "Data Center",
+            "choices": "{{ deployment_policies }}",
+            "new_question": true
+        },
+        {
+            "question_name": "Hosts CSV file name",
+            "question_description": "Upload a .csv file with list of target IPv4 addresses at /home directory on Ansible Tower. Provide the name of uploaded .csv file here.",
+            "required": true,
+            "type": "text",
+            "variable": "csv_filename",
+            "min": null,
+            "max": null,
+            "default": "windows_patching.csv",
+            "choices": ""
+        },
+    ]
+}

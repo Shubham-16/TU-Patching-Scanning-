@@ -1,0 +1,11 @@
+---
+satellite_organization: TUCIBIL
+process_name: httpd
+uptime_limit: 120  #in days
+disk_space_limit: 80  #disk used in percentage.
+waiting_time: 3   #waiting time  while host rebooting.
+yum_update_retries: 3      #default yum update retries (3 times)
+yum_update_delay: 15       # default delay between yum updates 15 seconds.
+register_retries: 3
+register_delay: 15
+home_path: /home/PA-shubkum/

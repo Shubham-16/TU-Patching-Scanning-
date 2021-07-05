@@ -1,0 +1,3 @@
+---
+- import_tasks: update_inventory.yml
+- import_tasks: launch_rhel_os_patching_job_template.yml

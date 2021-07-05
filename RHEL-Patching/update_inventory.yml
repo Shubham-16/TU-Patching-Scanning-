@@ -1,0 +1,10 @@
+- hosts: localhost
+  connection: local
+  vars:
+     ip_list: '{{ ip.split(",") }}'
+  tasks:
+    - debug: msg="{{ ip_list }}"
+
+    # Including role to Add hosts to ansible tower inventory and launch RHEL OS patching job template againts that hosts.
+    - include_role:
+          name: update_inventory

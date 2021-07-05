@@ -1,0 +1,50 @@
+---
+- block:
+    - name: To check disk space
+      shell: if [[ $(df -H /var --output=pcent | grep -v Use% | sed 's/%//') -gt {{ disk_space_limit }} ]]; then echo "insuffiecient_space"; else echo "suffiecient_space";fi
+      ignore_errors: true
+      register: disk_space_status
+
+    - name: Including details about the disk in log file
+      include: log_file.yml
+      vars:
+        content: "System Disk Space status is as follows: {{ disk_space_status.stdout  }}"
+        status: "INFO"
+      
+  rescue:
+    - name: Sending an email when failed to check disk space.
+      include_role:
+        name: common/send-email
+      vars:
+        mail_subject: Failed to check disk space.
+        mail_body: '<p>There are some problems while checking disk soace on host <b> {{ inventory_hostname }} </b></p>'
+      
+    - name: Including details about disk space in log 
+      include: log_file.yml
+      vars:
+        content: "Sending an email if diskspace is less than required {{ disk_space_status.stdout  }}"
+        status: "ERROR"
+
+    - name: Failed to check disk space status
+      fail:
+        msg: "Something went wrong while checking disk space status"
+
+- name: Sending an email when there is insuffiecient disk space.
+  include_role:
+    name: common/send-email
+  vars:
+      mail_subject: Abort Patching, less disk space available.
+      mail_body: '<p>We are aborting patching on  host <b>{{ inventory_hostname }}</b> because it uses {{ disk_space_limit }}% or more disk space, which is insuffiecient space for patching </p>'
+  when: disk_space_status.stdout == "insuffiecient_space"
+
+- name: Including details about disk space in log 
+  include: log_file.yml
+  vars:
+    content: " {{ inventory_hostname }} have very less disk space available, cannot perform patching."
+    status: "ERROR"
+  when: disk_space_status.stdout == "insuffiecient_space"
+
+- name: Exiting the playbook when less disk space is available
+  fail:
+    msg: " {{ inventory_hostname }} have very less disk space available, cannot perform patching."
+  when: disk_space_status.stdout == "insuffiecient_space"
