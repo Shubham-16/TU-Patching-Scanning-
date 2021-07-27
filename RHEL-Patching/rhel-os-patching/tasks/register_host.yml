@@ -6,13 +6,11 @@
     lineinfile:
       path: /etc/hosts
       line: "{{ satellite_host}} {{ satellite_fqdn }}"
-    register: host_entry
     
   - include: log_file.yml
     vars:
       content: "Making satellite ip entry on /etc/hosts file"
       status: "INFO"
-    when: host_entry
 
   - name: Checking of repo URL
     action: uri url=http://{{ satellite_fqdn }}/pub/ return_content=yes
@@ -23,14 +21,13 @@
     vars:
       content: "Checking the satellite url:= {{test_repo}}"
       status: "INFO"
-    when: test_repo
 
   - name: Sending an email when registration of host fails
     include_role:
       name: common/send-email
     vars:
       mail_subject: Invalid Satellite IP or FQDN
-      mail_body: '<p>It seems you are passing wrong Satellite IP, Fail to register <b>{{ inventory_hostname }}</b> on satellite <b> {{satellite_host}}</b> </p>'
+      mail_body: '<p>Hi Team,</p> <br>It seems you are passing wrong Satellite IP, Fail to register <b>{{ inventory_hostname }}</b> on satellite <b> {{satellite_host}}</b> </p>'
     when: test_repo.failed
 
   - name: Including details about regestration of host in log  
@@ -56,7 +53,6 @@
     vars:
       content: "Downloading the script file at {{home_path}} to register host to satellite."
       status: "INFO"
-    when: script_download
 
   - name: run the script 
     command: yum localinstall katello-ca-consumer-latest.noarch.rpm -y
@@ -66,8 +62,7 @@
   - include: log_file.yml
     vars:
       content: "Running the local katello-ca-consumer-latest.noarch.rpm script to register the host {{inventory_hostname}} to satellite"
-      status: "INFO"
-    when: script_status
+      status: "INFO" 
 
   - name: Sending an email when katello script fails
     include_role: 
@@ -101,22 +96,14 @@
     vars:
       content: " Fail to register the host {{inventory_hostname}} to satellite. More Info:: {{sat_regis.stderr}}"
       status: "ERROR"
-    when: sat_regis
 
-  - name: Sending an email when host registered with sattellite
-    include_role:
-      name: common/send-email
-    vars:
-      mail_subject: Successfully registered host with satellite.
-      mail_body: '<p> We have successfully registered host  <b>{{ inventory_hostname }}</b> on satellite <b> {{satellite_host}} </b></p>'
-    when: sat_regis
 
   - name: Sending an email when registration of host fails
     include_role:
       name: common/send-email
     vars:
       mail_subject: Failed to Register host on Satellite.
-      mail_body: '<p> There are some problems while registering host <b>{{ inventory_hostname }}</b> on satellite <b> {{satellite_host}} </b></p>'
+      mail_body: '<p>Hi Team,</p> <br>There are some problems while registering host <b>{{ inventory_hostname }}</b> on satellite <b> {{satellite_host}} </b></p>'
     when: sat_regis.failed
   
   - name: Including details when host registration fails in log
@@ -124,7 +111,6 @@
     vars:
       content: "Sending an Email to the user about the register to the host {{inventory_hostname}} to satellite fails"
       status: "ERROR"
-    when: sat_regis.failed
 
   - name: Exiting the playbook when registration of host with satellite failed
     fail:
@@ -144,7 +130,6 @@
     vars:
       content: "Installing the Katello-agent on the host {{inventory_hostname}} via satellite"
       status: "INFO"
-    when: sat_regis
   #  - name: Disable repos for the host
   #    shell: subscription-manager repos --disable rhel-7-server-satellite-tools-6.8-rpms
 

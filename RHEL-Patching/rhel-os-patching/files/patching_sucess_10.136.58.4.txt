@@ -1,0 +1,1 @@
+{"msg": "", "changed": false, "results": ["Nothing to do here, all packages are up to date"], "rc": 0, "failed": false, "attempts": 1}

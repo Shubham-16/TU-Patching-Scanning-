@@ -1,0 +1,10 @@
+---
+# tasks file for win_reboot
+- name: Check if machines reboot successfully
+  block:
+    - name: Reboot the machine
+      win_reboot:
+          msg: " reboot has been iniated for {{ inventory_hostname }}"
+  rescue:
+    - fail:
+        msg: "Reboot failed for {{ inventory_hostname }}"

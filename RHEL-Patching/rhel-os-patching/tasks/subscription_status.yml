@@ -9,7 +9,6 @@
     vars:
       content: "Subscribtion status of the host is {{res}}"
       status: "INFO"
-    when: res
 
   - name: testing subscription-manager status
     debug:

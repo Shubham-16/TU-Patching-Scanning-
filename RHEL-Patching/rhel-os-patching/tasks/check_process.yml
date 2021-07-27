@@ -3,7 +3,7 @@
 ---
 - block:
     - name: Checking Process running or not
-      shell: systemctl show -p ActiveState {{ process_name }} | sed 's/ActiveState=//g'
+      shell: if ps -eaf | egrep {{ process_name }} | grep -v grep > /dev/null; then echo "process_running"; else echo "process_not_running";fi
       ignore_errors: true
       register: proccess_status
       
@@ -41,10 +41,10 @@
         name: common/send-email
   vars:
       mail_subject: Abort Patching, due to running process.
-      mail_body: '<p> It seems like you have running agent <b>{{ process_name }}</b>, Hence we are aborting the patching operatioin on host <b>{{ inventory_hostname }}</b>,  please stop it before patching.</p>'
-  when: proccess_status.stdout == "active"
+      mail_body: '<p> It seems like you have running agent {{ process_name }} on host <b>{{ inventory_hostname }}</b> please stop it before patching.</p>'
+  when: proccess_status.stdout == "process_running"
   
 - name: Exiting the playbook
   fail:
-    msg: "Abort patching due to running process {{ process_name }} on host {{ inventory_hostname }}, Please stop the process before patching."
-  when: proccess_status.stdout == "active"
+    msg: " {{ inventory_hostname }} have running Application.Please stop the application first, then attempt patching."
+  when: proccess_status.stdout == "process_running"

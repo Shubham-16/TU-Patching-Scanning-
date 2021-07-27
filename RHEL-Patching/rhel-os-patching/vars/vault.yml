@@ -1,4 +1,8 @@
 ---
+mail_host : smtp.corp.transunion.com
+mail_port : 25
+#mail_username :
+#mail_password : 
 satellite_host : 10.100.80.67
-satellite_fqdn : satellite.localhost.com
+satellite_fqdn : satellite.transunion.com
 satellite_activationkey : tuKey-el7

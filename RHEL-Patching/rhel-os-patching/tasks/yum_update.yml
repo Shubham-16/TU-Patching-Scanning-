@@ -10,22 +10,31 @@
       delay: "{{ yum_update_delay }}"
       ignore_errors: yes
 
-    - name: Create a file with content of patch details.  
+    - name: Create a file with content of error message when patching failed.  
       delegate_to: localhost
       become: no
       copy:
-        dest: "/tmp/patching_details.txt"
+        dest: "/tmp/patching_error_{{ inventory_hostname }}.txt"
         content: |
                  {{ yum_update }}
-      when: yum_update.failed or yum_update
+      when: yum_update.failed
+
+    - name: Create a file with content of successful patching.  
+      delegate_to: localhost
+      become: no
+      copy:
+        dest: "/tmp/patching_success_{{ inventory_hostname }}.txt"
+        content: |
+                 {{ yum_update }}
+      when: yum_update  
 
     - name: Sending an email when patch fails
       include_role:
         name: common/send-email
       vars:
-          mail_subject: Failed to patch host 
+          mail_subject: Failed to patch
           mail_body: '<p>Something went wrong while performing patching on host <b> {{ inventory_hostname }} </b>, kindly refer following attachement for more details </p>'
-          attachment_file: "/tmp/patching_details.txt"
+          attachment_file: "/tmp/patching_error_{{ inventory_hostname }}.txt"
       when: yum_update.failed
 
     - name: Exiting the playbook

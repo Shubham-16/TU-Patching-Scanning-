@@ -1,0 +1,64 @@
+---
+# tasks file for update_inventory
+- name: Fetch Inventory ID,Group ID and Add hosts 
+  block:
+    - name: fetch inventory id 
+      uri:
+        url: "https://{{ lookup('env', 'TOWER_HOST') }}/api/v2/inventories/?name={{ inventory_name|replace(' ', '%20') }}"
+        method: GET
+        user: "{{ lookup('env', 'TOWER_USERNAME') }}"
+        password: "{{ lookup('env', 'TOWER_PASSWORD') }}"
+        force_basic_auth: yes
+        validate_certs: no
+        return_content: yes
+        status_code: 200
+      register: inventory
+
+    - name: print Inventory ID 
+      debug:
+        msg: "{{ inventory.json.results[0].id }}"
+
+    - name: TO get existing list of hosts in goroup
+      uri:
+        url: "https://{{ lookup('env', 'TOWER_HOST') }}/api/v2/inventories/{{ inventory.json.results[0].id }}/hosts/"
+        method: GET
+        user: "{{ lookup('env', 'TOWER_USERNAME') }}"
+        password: "{{ lookup('env', 'TOWER_PASSWORD') }}"
+        force_basic_auth: yes
+        validate_certs: no
+        return_content: yes
+        status_code: 200
+      register: existing_hosts
+
+    - name: Print list of existing hosts
+      debug: msg="{{ existing_hosts.json.results | json_query(hosts_list) }}"
+      vars:
+         hosts_list: "[*].name"
+
+    - name: setting fact for list
+      set_fact: existing_hosts_list="{{ existing_hosts.json.results | json_query(hosts_list) }}"
+      vars:
+         hosts_list: "[*].name"
+
+    - name: printing difference of existing hosts and new hosts
+      debug: msg="{{ ip_list | difference(existing_hosts_list) | list }}"
+
+
+    - name: Add host 
+      uri:
+        url: "https://{{ lookup('env', 'TOWER_HOST') }}/api/v2/inventories/{{ inventory.json.results[0].id }}/hosts/"
+        method: POST
+        user: "{{ lookup('env', 'TOWER_USERNAME') }}"
+        password: "{{ lookup('env', 'TOWER_PASSWORD') }}"
+        force_basic_auth: yes
+        validate_certs: no
+        body_format: json
+        body:
+          name: "{{ item }}"
+        #        return_content: yes
+        status_code: 201
+      loop: "{{ ip_list | difference(existing_hosts_list) | list }}"
+  #      register: result1
+  rescue:
+    - fail:
+        msg: "Problem While Updating Inventory, Check the Inventory and group names and also the APIs"

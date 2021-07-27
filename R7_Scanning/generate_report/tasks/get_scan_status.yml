@@ -1,0 +1,57 @@
+---
+
+  - name: Include vars file
+    include_vars: ../vars/vars.yml
+    no_log: True
+
+  - name: Include lauch scan role vars
+    include_vars: ../vars/report_req_vars.yml
+    no_log: True
+
+  - block:
+     - name: Get launched scan status {{date}} {{time}}
+       uri:
+        url: https://{{insightvm_host}}/api/3/scans/{{scan_id}}
+        user: "{{insightvm_user}}"
+        password: "{{insightvm_password}}"
+        method: GET
+        validate_certs: no
+        force_basic_auth: yes
+        status_code: 200
+       register: scan_status
+       until: '"{{ scan_status.json.status }}" != "running" '
+       retries:  "{{ retry_no}}"
+       delay: "{{ delay_time }}"
+ 
+ 
+     - name: Get the final state of scan {{date}} {{time}}
+       set_fact:
+        scan_state: "{{ scan_status.json.status }}"
+        site_scan_id: "{{ scan_status.json.id }}"
+
+     - debug:
+        msg: "scan state final is {{scan_state}}, site scan id is {{site_scan_id}}"
+    
+    rescue:
+      - name: Send an email if any task fails {{date}} {{time}}
+        include_role:
+         name:  common/send_email
+        vars:
+         mail_subject: Failed to get scan status of {{scan_name}}
+         mail_body: 'Requested scan status could not be fetched for {{scan_site}} and scan name {{scan_name}} as the issue is {{ scan_status.json.message }}. Please check log file that will be sent on a seperate email.'
+        # mail:
+        #  host: smtp.gmail.com
+        #  port: 587
+        #  username: "{{smtp_username}}"
+        #  password: "{{smtp_password}}"
+        #  to: "{{ email_id }}"
+        #  subject: Failed to get scan status of {{scan_name}}
+        #  body: 'Hi team, requested scan status could not be fetched for {{scan_site}} and scan name {{scan_name}} .'
+        #delegate_to: localhost
+          
+      - name: Abort this role tasks execution if no scan was triggered {{date}} {{time}}
+        fail:
+          msg: Aborting playbook execution, as scan status could not be fetched, as the issue is:- {{ scan_status.json.message }}
+        when:  scan_status.status != 200
+     
+ 

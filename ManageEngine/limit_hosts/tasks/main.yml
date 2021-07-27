@@ -1,0 +1,16 @@
+---
+# tasks file for limit_hosts
+- name: Launch a Template with Limit 
+  uri:
+    url: "https://{{ lookup('env', 'TOWER_HOST') }}/api/v2/job_templates/{{ job_template_id }}/launch/"
+    method: POST
+    user: "{{ lookup('env', 'TOWER_USERNAME') }}"
+    password: "{{ lookup('env', 'TOWER_PASSWORD') }}"
+    body_format: json
+    body: {
+    "limit": "{{ ip }}"
+     }
+    force_basic_auth: yes
+    validate_certs: no
+    return_content: yes
+    status_code: 201

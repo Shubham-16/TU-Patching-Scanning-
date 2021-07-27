@@ -1,0 +1,65 @@
+---
+# tasks file for track_status
+- name: Include vault file 
+  include_vars: ../../manage_engine/vars/vault.yml
+  no_log: True
+
+- name: get the authentication token 
+  uri:
+    url: "http://{{ manageengine_server }}/api/1.3/desktop/authentication?username={{ user }}&password={{ pass|b64encode }}&auth_type=local_authentication"
+    method: GET
+  register: token
+
+- name: fetch all configuration 
+  uri:
+    url: "http://{{ manageengine_server }}/api/1.3/patch/viewconfig"
+    headers:
+       Authorization: "{{ token.json.message_response.authentication.auth_data.auth_token }}"
+    method: GET
+  register: configs
+
+- name: Filter Config ID 
+  set_fact: 
+     index: "{{ item.0 }}"
+  when: item.1.collection_name == label
+  with_indexed_items: 
+       - "{{ configs.json.message_response.viewconfig }}"
+
+- debug:
+     msg: "{{ index }}"
+
+- name: Track Configuratin Status 
+  block:
+    - name: Check Configuration Status 
+      uri:
+        url: "http://{{ manageengine_server }}/api/1.3/patch/viewconfig"
+        headers:
+          Authorization: "{{ token.json.message_response.authentication.auth_data.auth_token }}"
+        method: GET
+      register: config_status
+      until: config_status.json.message_response.viewconfig[index | int].status_label == "dc.db.config.status.executed"
+      retries: 100
+      delay: 30
+  rescue:
+    - name: Send Email if patch execution fails 
+      mail:
+        host: "{{ host }}"
+        port: "{{ port }}"
+        username: "{{ username }}"
+        password: "{{ password }}"
+        to: "{{ to }}"
+        subject: Patch Status
+        subtype: html
+        body: "<p> Hi Team,<br/><br/> The Patch Configuration failed to execute. Please check logs for further details</p> "
+
+- name: Send Email after successfull patch execution 
+  mail:
+    host: "{{ host }}"
+    port: "{{ port }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    to: "{{ to }}"
+    subject: Patch Status
+    subtype: html
+    body: "<p> Hi Team,<br/><br/> Patch Configuration has been executed successfully.</p> "
+

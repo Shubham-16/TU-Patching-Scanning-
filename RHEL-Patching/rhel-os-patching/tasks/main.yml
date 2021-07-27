@@ -48,32 +48,31 @@
       vars:
           mail_subject: Patching will start soon.
           mail_body: '<p> We are ready to patch on host <b> {{ inventory_hostname }} </b>, we will notify you after patching. </p>'
-      when: proccess_status.stdout == "inactive" and disk_space_status.stdout == "suffiecient_space" and res.stdout_lines[0] == "Current"
+      when: proccess_status.stdout == "process_not_running" and disk_space_status.stdout == "suffiecient_space" and res.stdout_lines[0] == "Current"
       
     - name: Including details about the patch in log file
       include: log_file.yml
       vars:
         content: " Sending the email for patching, Patching will begin soon on host {{ inventory_hostname }}"
         status: "INFO"
-      when: proccess_status.stdout == "inactive" and disk_space_status.stdout == "suffiecient_space" and res.stdout_lines[0] == "Current"
+      when: proccess_status.stdout == "process_not_running" and disk_space_status.stdout == "suffiecient_space" and res.stdout_lines[0] == "Current"
 
     - name: Pre validation checks of a host
       include: patch.yml
       vars:
         date: "{{ lookup('pipe', 'date +%Y-%m-%d')}}"
         time: "{{ lookup('pipe', 'date +%H:%M:%S')}}"
-      when: proccess_status.stdout == "inactive" and disk_space_status.stdout == "suffiecient_space" and res.stdout_lines[0] == "Current"
+      when: proccess_status.stdout == "process_not_running" and disk_space_status.stdout == "suffiecient_space" and res.stdout_lines[0] == "Current"
 
     - name: Upgrade all packages ( yum update )  
       include: yum_update.yml
-      when: proccess_status.stdout == "inactive" and disk_space_status.stdout == "suffiecient_space" and res.stdout_lines[0] == "Current"
+      when: proccess_status.stdout == "process_not_running" and disk_space_status.stdout == "suffiecient_space" and res.stdout_lines[0] == "Current"
       
     - name: Including patching details in log file  
       include: log_file.yml
       vars:
-        content: "Patching performed successfully on host {{inventory_hostname}}"
+        content: "Patching of host is in process: with patching update {{yum_update.stdout | default('')}}"
         status: "INFO"
-      when: yum_update
 
     - name: check for kernel updates   
       include: check_kernel.yml
@@ -83,16 +82,16 @@
         name: common/send-email
       vars:
           mail_subject: Patching performed successfully.
-          mail_body: '<p>Patching on host <b>{{ inventory_hostname }}</b> has completed successfully. Kindly refer attached file for more details</p>'
-          attachment_file: "/tmp/patching_details.txt"
-      when: proccess_status.stdout == "inactive" and disk_space_status.stdout == "suffiecient_space" and res.stdout_lines[0] == "Current" and yum_update
+          mail_body: '<p>Patching on host <b>{{ inventory_hostname }}</b> has completed successfully</p>'
+          attachment_file: "/tmp/patching_success_{{ inventory_hostname }}.txt"
+      when: proccess_status.stdout == "process_not_running" and disk_space_status.stdout == "suffiecient_space" and res.stdout_lines[0] == "Current" and yum_update
       
     - name: Including details of successful patching in log file.  
       include: log_file.yml
       vars:
-        content: "Sending an email of successfull patching to the user. More Info check your Email"
+        content: "Sending an email of successfull patching to the user. More Info {{yum_update}}"
         status: "INFO"
-      when: proccess_status.stdout == "inactive" and disk_space_status.stdout == "suffiecient_space" and res.stdout_lines[0] == "Current" and yum_update
+      when: proccess_status.stdout == "process_not_running" and disk_space_status.stdout == "suffiecient_space" and res.stdout_lines[0] == "Current" and yum_update
 
     - name: Post validation checks of a host
       include: patch.yml
@@ -112,7 +111,6 @@
       vars:
           content: "Fetching the difference of both pre configuration and post configuration of host state and check whether patch happens or not."
           status: "INFO"
-      when: diff_out
 
     - name: debug diff of worldcount
       debug:
@@ -128,8 +126,4 @@
       shell: |
           cd /var/log/
           mv bkp_* /var/log/patching_archive
-      when: ( pre_checks is defined ) and (pre_checks | length > 0)
-      ignore_errors: true
-
-    - name: cleanup all unused created files
-      include: cleanup.yml
+      ignore_errors: true 

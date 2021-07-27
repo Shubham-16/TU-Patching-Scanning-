@@ -1,0 +1,104 @@
+survey_spec_body: {
+    "name": "",
+    "description": "",
+    "spec": [
+        {
+            "question_name": "Scan Site Name",
+            "question_description": "Select a site to be scanned on Rapid7 InsightVM",
+            "required": true,
+            "type": "multiplechoice",
+            "variable": "scan_site_name",
+            "min": null,
+            "max": null,
+            "default": "",
+            "choices": "{{scan_sites_list}}"
+        },
+        {
+            "question_name": "Scan Template",
+            "question_description": "Select a scan template to be used",
+            "required": true,
+            "type": "multiplechoice",
+            "variable": "scan_template",
+            "min": null,
+            "max": null,
+            "default": "",
+            "choices": "{{ scan_templates_list }}"
+        },
+        # {
+        #     "question_name": "Hosts file name",
+        #     "question_description": "Provide an hosts csv file name",
+        #     "required": true,
+        #     "type": "text",
+        #     "variable": "csv_filename",
+        #     "min": null,
+        #     "max": null,
+        #     "default": "",
+        #     "choices": ""
+        # },
+        
+        # {
+        #     "question_name": "Scan Engine",
+        #     "question_description": "Select a scan engine",
+        #     "required": true,
+        #     "type": "multiplechoice",
+        #     "variable": "scan_engine_name",
+        #     "min": null,
+        #     "max": null,
+        #     "default": "Local scan engine",
+        #     "choices": "{{ scan_engines_list }}",
+        #     "new_question": true
+        # },
+        {
+            "question_name": "Scan Name",
+            "question_description": "Provide a scan name",
+            "required": true,
+            "type": "text",
+            "variable": "scan_name",
+            "min": 0,
+            "max": 1024,
+            "default": "",
+            "choices": "",
+            "new_question": true
+        },
+        {
+            "question_name": "IP Address",
+            "question_description": "Provide a valid ipv4 address to scan within the site configuration
+                                     example: ipv4_address1, ipv4_address2",
+            "required": true,
+            "type": "text",
+            "variable": "ip_address",
+            "min": 0,
+            "max": 1024,
+            "default": "",
+            "choices": ""
+        },
+        {
+            "question_name": "Scan Report Name",
+            "question_description": "Provide a scan report name",
+            "required": true,
+            "type": "text",
+            "variable": "scan_report_name",
+            "min": 0,
+            "max": 1008,
+            "default": "",
+            "choices":"",
+            "new_question": true
+        },
+        {
+            "question_name": "Sql Query",
+            "question_description": "Provide a sql query to generate report ",
+            "required": true,
+            "type": "textarea",
+            "variable": "sql_query",
+            "min": 0,
+            "max": 8008,
+            "default": "SELECT * FROM fact_asset WHERE vulnerabilities > 0",
+            "choices":"",
+            "new_question": true
+        }
+    ]
+}
+
+scan_sites_list: []
+scan_templates_list: []
+scan_engines_list: []

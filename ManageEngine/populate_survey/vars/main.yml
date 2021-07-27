@@ -1,0 +1,56 @@
+---
+# vars file for populate_survey
+survey_body: {
+    "name": "",
+    "description": "",
+    "spec": [
+        {
+            "question_name": "Ip addresses",
+            "question_description": "Comma separated ipv4 inputs",
+            "required": true,
+            "type": "text",
+            "variable": "ip",
+            "min": 0,
+            "max": 1024,
+            "default": "",
+            "choices": "",
+            "new_question": true
+        },
+        {
+            "question_name": "Config label",
+            "question_description": "Configuration label",
+            "required": true,
+            "type": "text",
+            "variable": "label",
+            "min": 0,
+            "max": 1024,
+            "default": "",
+            "choices": "",
+            "new_question": true
+        },
+        {
+            "question_name": "Config description",
+            "question_description": "Configuration description",
+            "required": true,
+            "type": "text",
+            "variable": "description",
+            "min": 0,
+            "max": 1024,
+            "default": "",
+            "choices": "",
+            "new_question": true
+        },
+        {
+            "question_name": "Deployment Policies",
+            "question_description": "Select a deployment policy",
+            "required": true,
+            "type": "multiplechoice",
+            "variable": "deployment_policy",
+            "min": null,
+            "max": null,
+            "default": "Force reboot excluding servers",
+            "choices": "{{ deployment_policies }}",
+            "new_question": true
+        }
+    ]
+}

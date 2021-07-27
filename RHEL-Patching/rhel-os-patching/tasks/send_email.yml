@@ -1,0 +1,21 @@
+---
+    - name: including email parameters from vault file
+      include_vars: "{{ vault_file_path }}"
+
+    - name: Sending an email notification
+      delegate_to: localhost
+      become: no
+      mail:
+        host: "{{ mail_host }}"
+        port: "{{ mail_port }}"
+        username: "{{ mail_username }}"
+        password: "{{ mail_password }}"
+        to: "User < {{ to_email }}>"
+        subject: "{{ mail_subject }}"
+        subtype: html
+        attach: "{{ attachment_file | default( [] ) }}"
+        body: "{{ mail_body }}"
+        secure: starttls
+      ignore_errors: true
+
+      

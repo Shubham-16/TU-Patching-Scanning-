@@ -5,7 +5,7 @@
       ignore_errors: true
       register: uptime_status
 
-    - name: Including details of uptime in log file
+    - name: Including details of uptime on log file
       include: log_file.yml
       vars:
         content: "Uptime of the system is {{uptime_status}}"
@@ -16,9 +16,9 @@
         name: common/send-email
       vars:
         mail_subject: Failed to get uptime of machine.
-        mail_body: '<p>There are some problems while getting uptime of host <b> {{ inventory_hostname }} </b></p>'
+        mail_body: '<p>Hi Team,</p> <br><p>There are some problems while getting uptime of host <b> {{ inventory_hostname }} </b></p>'
 
-    - name: Including details in log file about uptime status
+    - name: Including details in log files about uptime
       include: log_file.yml
       vars:
         content: "Something went wrong while getting uptime of machine. Cannot find the Uptime of the system"
@@ -26,9 +26,13 @@
 
     - name: Failed to check process status
       fail:
-        msg: "Abort execution due to something went wrong while getting uptime of machine"
+        msg: "Something went wrong while getting uptime of machine"
 
-# Rebooting the system when uptime of machine is greater
+- name: To display Uptime status
+  debug:
+      msg: "{{ uptime_status.stdout }}"
+  run_once: true
+
 - name: Rebooting the system
   include: reboot-system.yml
   when: uptime_status.stdout == "uptime_execeded"
@@ -36,13 +40,13 @@
 - name: Including details when reboot is required
   include: log_file.yml
   vars:
-      content: "Rebooting the system when uptime is greater than {{ uptime_limit }} days"
+      content: "Rebooting the system when uptime is less than required"
       status: "INFO"
   when: uptime_status.stdout == "uptime_execeded"
 
 - name: Including details when reboot is not required
   include: log_file.yml
   vars:
-      content: "Reboot not required , uptime of the machine is below {{ uptime_limit }}"
+      content: "Reboot not required , uptime of the machine is below the threshold."
       status: "INFO"
   when: uptime_status.stdout != "uptime_execeded"

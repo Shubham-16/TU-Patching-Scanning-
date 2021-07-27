@@ -15,7 +15,7 @@
         content: "check if reboot required after kernel update or not:= {{reboot_required}}"
         status: "INFO"
   rescue:
-    - name: Sending an email when failed to check kernel version.
+    - name: Sending an email when failed to check kernel versions.
       include_role:
         name: common/send-email
       vars:
@@ -33,7 +33,7 @@
         msg: "Something went wrong while calculating difference between previous and latest kernel version."
 
 # Reboot the system when kernel version updated after patching. 
-- name: Rebooting the system due to kernel version update
+- name: Rebooting the system
   include: reboot-system.yml
   when: reboot_required.stdout == "reboot_needed"
   
