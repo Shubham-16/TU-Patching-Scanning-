@@ -1,0 +1,15 @@
+---
+- hosts: localhost
+  vars:
+     resources: []
+     ip_list: []
+     valid_ip_list: []
+     patch_list: {}
+     filtered_patches: {}
+     filtered_patch_description: []
+     ip_with_id: {}
+     deployment_policies: []
+     json_data: []
+  tasks:
+    - include_role:
+          name: populate_survey

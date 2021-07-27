@@ -1,0 +1,12 @@
+---
+- hosts: localhost
+  vars:
+     configuration_exists: 0
+     deployment_policy_id: ""
+     json_data: []
+     patch_ids: []
+  tasks:
+    - include_role:
+          name: manage_engine
+
+

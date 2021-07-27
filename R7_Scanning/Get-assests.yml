@@ -1,0 +1,41 @@
+---
+ - block:
+      - name: get all assests
+        uri:
+          url: https://rapid7.transunion.com/api/3/assets/search
+          user: "abhosal"
+          password: "Welc0me$1721"
+          validate_certs: no
+          method: POST
+          body_format: json
+          body: '{
+            "filters": [
+              {
+               "field": "ip-address",
+               "operator": "is",
+               "value": "{{item}}"
+              }
+            ],
+            "match": "all"
+          }'
+          force_basic_auth: yes
+          timeout: 2408
+        register: site_assets
+
+      - debug:
+         msg: "{{site_assets}}"
+
+      - name: copy the output to a local file {{date}} {{time}}
+        copy:
+          content: "{{  site_assets.json }}"
+          dest: "./site-assets1.json"
+        delegate_to: localhost
+    
+      - name: Parsing the output {{date}} {{time}}
+        shell: python2 generate_report/files/parse-json1.py "102303"
+        register: output
+      - debug:
+          msg: "{{ output.stdout_lines }}"
+      - name: append list
+        set_fact:
+          ips: "{{ ips + output.stdout_lines }}"

@@ -1,0 +1,60 @@
+report_req_body : {
+      "filters": {
+      "severity": "critical",
+      "statuses": ["all"]
+},
+      "format": "sql-query",
+      "language": "en-US",
+      "name": "{{ scan_report_name }}",
+      "query": "{{ sql_query }}",
+      "scope": {
+        "scan": "{{ site_scan_id }}"
+      },
+      "template": "executive-overview",
+      "timezone": "Asia/Calcutta",
+      "version": "2.3.0"
+
+  }
+retry_no: 100
+delay_time: 120
+#report_directory: root/Rapid7_Scan_Reports2
+report_directory: var/log/Rapid7_Scan_Reports
+scan_logs_directory: var/log/Rapid7_Scan_Logs
+date: "{{ lookup('pipe', 'date +%Y-%m-%d')}}"
+time: "{{ lookup('pipe', 'date +%H:%M:%S')}}"
+#work order service request parameters
+first_name: ""
+last_name: ""
+customer_first_name: ""
+customer_last_name: ""
+company_name: ""
+customer_company: ""
+company_location: ""
+
+# work_order_request : 
+# {
+  
+#   Content-Diposition: form-data; name="entry"
+#   Content-Type: application/json; charset=UTF-8
+#   Content-Transfer-Encoding: 8bit
+
+   
+#       "values": {
+#         "Detailed Description": "Vulnerabilities identified on these assets {{ }}",
+#         "z1D_Action": "CREATE",
+#         "First Name": "{{first_name}}",
+#         "Last Name": "{{last_name}}",
+#         "Customer First Name": "{{customer_first_name}}",
+#         "Customer Last Name": "{{customer_last_name}}",
+#         "Summary": "Scan completed on {{scan_site_name}} and found critical vulnerabilities on ",
+#         "Status": "Assigned",
+#         "Company": "{{company_name}}",
+#         "Customer Company": "{{ customer_company }}",
+#         "Location Company": "{{ company_location }}"
+#     }
+#   Content-Disposition: form-data;
+#   name="attach-Attachment1"; filename="/root/Rapid7_Scan_Reports/{{scan_name}}"
+#   Content-Type: application/octet-stream
+#   Content-Transfer-Encoding: binary
+  
+# }

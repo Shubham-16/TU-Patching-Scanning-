@@ -1,0 +1,11 @@
+---
+# tasks file for manage_engine
+- name: Include vault file
+  include_vars: ../vars/vault.yml
+  no_log: True
+
+- name: Create Patch Configuration
+  import_tasks: create_patch_configuration.yml
+
+# - name: Check Patch Configuration
+#   import_tasks: check_configuration.yml

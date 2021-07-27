@@ -1,0 +1,189 @@
+---
+- name: Get the authentication token from ManageEngine
+  uri:
+    url: "https://{{ manageengine_server }}/api/1.3/desktop/authentication?username={{ user }}&password={{ pass|b64encode }}&auth_type=local_authentication"
+    method: GET
+    validate_certs: no
+  register: token
+
+- name: Print the authentication token
+  debug:
+    msg: "{{ token.json.message_response.authentication.auth_data.auth_token }}"
+
+- name: Fetch details of all endpoints
+  uri:
+    url: "https://{{ manageengine_server }}/api/1.3/patch/allsystems?pagelimit=2000"
+    headers:
+       Authorization: "{{ token.json.message_response.authentication.auth_data.auth_token }}"
+    method: GET
+    validate_certs: no
+  register: systems
+
+- name: Map Ip with ID
+  set_fact:
+      ip_with_id: "{{ ip_with_id | combine({item.ip_address: item.resource_id}) }}"
+  loop: "{{ systems.json.message_response.allsystems }}"
+
+- name: Print dictionary of Ip and ID
+  debug:
+     msg: "{{ ip_with_id  }}"
+
+- name: Map System IP and ID and create a list of dictionary
+  shell: python2 populate_survey/files/map_system_with_id.py "{{ ip_with_id }}"
+  register: system_with_id
+
+- name: Print the IP list
+  debug:
+     msg: "{{ system_with_id.stdout }}"
+
+- name: Create list of IDs for all the target machines
+  set_fact:
+    resources: '{{ resources + [item.resource_id] }}'
+  when: item.ip_address in valid_ip_list
+  loop: "{{ system_with_id.stdout }}"
+
+- name: Filter Unique ID's
+  set_fact: 
+      resources: "{{ resources | unique }}"
+
+- name: Print the resource ID list 
+  debug:
+    msg: "{{ resources }}"
+
+- name: Mail if target machines are not listed on ManageEngine Sever 
+  include_role:
+    name: common/send-email
+  vars:
+    mail_subject: No Resources found on ManageEngine Server
+    mail_body: '<p>Resources are not present on MangageEngine server, hence terminating the job template with ID <b>"{{ tower_job_id }}"</b>. Check if agents are insatlled on the them. For detailed information, a log file has been sent on sepearte email.</p>' 
+  when: resources | length == 0
+
+- name: Fail the Job if target machines are not listed on ManageEngine Sever 
+  fail: 
+    msg: "Resources are not present on MangageEngine server, hence terminating the job template with ID {{ tower_job_id }}. Check if agents are insatlled on target them. For detailed information, a log file has been sent on sepearte email."
+  when: resources | length == 0
+
+- name: Fetch all missing patches  
+  uri:
+    url: "https://{{ manageengine_server }}/api/1.3/patch/allpatches?patchstatusfilter={{ status_type }}&pagelimit=2000"
+    headers:
+       Authorization: "{{ token.json.message_response.authentication.auth_data.auth_token }}"
+    method: GET
+    validate_certs: no
+  register: patches
+
+- name: Filter all the  patches and create a list 
+  set_fact:
+    patch_list: '{{ patch_list | combine({item.patch_id: item.patch_description}) }}'
+  # when: item.update_name == "Security Updates" or item.update_name == "Rollups"
+  loop: "{{ patches.json.message_response.allpatches }}"
+
+- name: Print the patch list 
+  debug:
+    msg: "{{ patch_list }} --- {{ patch_list | length }}"
+
+- name: Send Email if there are no patches available 
+  include_role:
+    name: common/send-email
+  vars:
+    mail_subject: No Patches available
+    mail_body: '<p>There are no patches available for the target machines. Hence terminating the job template with ID <b>"{{ tower_job_id }}"</b> and sending logs in a seperate email</p>' 
+  when: patch_list | length == 0
+
+- name: Fail if there are no patches available 
+  fail: 
+    msg: "There are no patches available for the target machines. Hence terminating the job template with ID {{ tower_job_id }} and sending logs in a seperate email. "
+  when: patch_list | length == 0
+
+- name: Fetch all the patches for the target machines
+  uri:
+    url: "https://{{ manageengine_server }}/dcapi/patch/manualdeployment/patchConfig?autoPopulate=true&isOnlyApproved=false"
+    headers:
+       Authorization: "{{ token.json.message_response.authentication.auth_data.auth_token }}"
+       Content-Type: application/patchConfig.v1+json
+       Accept: application/patchConfig.v1+json
+    body_format: json
+    validate_certs: no
+    body: {
+    "operation":  "INSTALL",
+    "patchIDs":  [],
+    "criteriaJSON":  {},
+    "dcViewFilterID":  "",
+    "resourceIDs":  "{{ resources }}"
+    }
+    method: POST
+  register: target
+
+- name: Print all patches related to given target machines
+  debug:
+     msg: "{{ target.json.patchIDs }}"
+
+- name: Filter all the patches
+  set_fact:
+    filtered_patches: '{{ filtered_patches | combine({item.key: item.value}) }}'
+    filtered_patch_description: '{{ filtered_patch_description + [item.value] }}'
+  when:  item.key | string in target.json.patchIDs
+  with_dict: "{{ patch_list }}"
+
+- name: Print apllicable patches
+  debug:
+     msg: "{{ filtered_patches }} ------ {{ filtered_patches | length }}-------{{ filtered_patch_description }}"
+
+- name: Send Email if there are no patches available for the provided target machine/machines.
+  include_role:
+    name: common/send-email
+  vars:
+    mail_subject: No Patches available
+    mail_body: '<p>There are no patches available for the target machines. Hence terminating the job template with ID <b>"{{ tower_job_id }}"</b>and sending logs in a seperate email.</p>' 
+  when: filtered_patches | length == 0
+
+- name: Fail if there are no patches available 
+  fail: 
+    msg: "There are no patches available for the target machines. Hence terminating the job template with ID {{ tower_job_id }} and sending logs in a seperate email."
+  when: filtered_patches | length == 0
+
+- name: Copy the name and ID of all the applicable patches as well as resource IDs into a file
+  copy: 
+      content: "{ 'patches': {{ filtered_patches }}, 'resources': {{ resources }} }"
+      dest: /tmp/patch.json
+
+- set_fact: 
+     json_data: "{{lookup('file', '/tmp/patch.json') }}"
+
+- debug: 
+     msg: "{{ json_data }}"
+
+- name: fetch all deployment policies 
+  uri:
+    url: "https://{{ manageengine_server }}/api/1.3/patch/deploymentpolicies"
+    headers:
+       Authorization: "{{ token.json.message_response.authentication.auth_data.auth_token }}"
+    method: GET
+    validate_certs: no
+  register: dp
+
+- name: print deployment policies list
+  debug:
+     msg: "{{ dp }}"
+
+- name: Filter Out deploymnet policies name and add it to list
+  set_fact:
+     deployment_policies: "{{ deployment_policies + [item.template_name] }}"
+  loop: "{{dp.json.message_response.deploymentpolicies}}"
+
+- name: print deployment policies list
+  debug:
+     msg: "{{ deployment_policies }}"
+
+- name: Create Survey vars 
+  uri:
+    url: "https://{{ lookup('env', 'TOWER_HOST') }}/api/v2/workflow_job_templates/{{ manageEngine_workflow_template_id }}/survey_spec/"
+    method: POST
+    user: "{{ lookup('env', 'TOWER_USERNAME') }}"
+    password: "{{ lookup('env', 'TOWER_PASSWORD') }}"
+    body_format: json
+    body: "{{ survey_body }}"
+    force_basic_auth: yes
+    validate_certs: no
+    return_content: yes
+    status_code: 200

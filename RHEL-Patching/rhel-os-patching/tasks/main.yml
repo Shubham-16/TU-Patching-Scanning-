@@ -128,7 +128,7 @@
       shell: |
           cd /var/log/
           mv bkp_* /var/log/patching_archive
-      when: ( pre_checks is defined ) and (pre_checks | length > 0)
+      when: pre_checks
       ignore_errors: true
 
     - name: cleanup all unused created files
