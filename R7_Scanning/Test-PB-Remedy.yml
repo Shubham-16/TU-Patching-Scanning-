@@ -1,0 +1,135 @@
+---
+- hosts: localhost
+  vars:
+   valid_ip_list: ["10.100.80.158","10.100.80.104","192.168.49.30","10.100.96.178"]
+   final_ip_list: []
+   ips : []
+  tasks:
+  #  - include_tasks: Get-assests.yml
+  #    loop: ["10.100.80.158","10.100.80.104","192.168.49.30","10.100.96.178"]
+  #  - debug:
+  #     msg: "{{ips}}"
+     
+
+
+
+  #  - name: test scan on windows m/c
+  #    uri:
+  #      url: https://rapid7.transunion.com/api/3/sites/116/scans
+  #      user: "abhosal"
+  #      password: "Welc0me$1721"
+  #      validate_certs: no
+  #      method: POST
+  #      force_basic_auth: yes
+  #      body_format : json
+  #      body: '{
+  #     "engineId": "80",
+  #     "hosts": ["192.168.49.30","10.100.96.178"],
+  #     "name": "test-scan-Windows",
+  #    "templateId": "_tu-50_10-full-audit-_full-connect-scan_"
+  #    }'
+  #      status_code: 201
+  #    register: launched_scan
+  #  - debug:
+  #     msg: "{{ launched_scan }}"    
+
+  #  - name: test if given ips belong to selected site
+  #    uri:  
+  #       url: https://rapid7.transunion.com/api/3/sites/116/assets?size=5000
+  #       user: abhosal
+  #       password: Welc0me$1721
+  #       validate_certs: no
+  #       method: GET
+  #       force_basic_auth: yes
+  #       status_code: 200
+  #       timeout: 300
+  #    register: site_check_assets
+    
+  #  - name: 
+  #    set_fact:
+  #       ips: "{{ ips + [item.ip] }}"
+  #    loop: "{{ site_check_assets.json.resources }}"
+  #  - debug:
+  #      msg: "ips arre: {{ ips }}"
+   
+  #  - name: Create final ip list
+  #    set_fact:
+  #       final_ip_list: "{{ final_ip_list + [item.ip] }}"
+  #    when: item in valid_ip_list
+  #    loop: "{{ ips }}"
+
+  #  - debug:
+  #       msg: "final ip list: {{final_ip_list}}"
+  #  - name: test if given ips belong to selected site
+  #    uri:  
+  #       url: https://{{ insightvm_host }}/api/3/sites/assets?size=800
+  #       user: "{{ insightvm_user }}"
+  #       password: "{{ insightvm_password }}"
+  #       validate_certs: no
+  #       method: GET
+  #       force_basic_auth: yes
+  #       status_code: 200
+  #     register: site_assets
+  #   - name: copy the output to a local file {{date}} {{time}}
+  #     copy:
+  #       content: "{{  site_assets.json }}"
+  #       dest: "./site-assets-check.json"
+  #     delegate_to: localhost
+  
+  #   - name: Parsing the output {{date}} {{time}}
+  #     shell: python2 launch_scan/files/check-site-assets.py "{{valid_ip_list}}"
+  #     register: valid_site_ips
+  #  - debug:
+  #       msg: "{{ valid_site_ips.stdout_lines }}"
+     
+
+
+
+
+
+
+
+
+
+
+
+    - name: Authenticate to bmc Remedy AR system and generate a token {{date}} {{time}}
+      #ignore_errors: true
+      uri:
+        url: https://transunion-dev-restapi.onbmc.com/api/jwt/login
+        # headers:
+        #  - Content-Type: "application/x-www-form-urlencoded"
+        body_format: form-urlencoded
+        body: "username=abhosal&password=tRanunion#2020"
+        method: POST
+        status_code : 200
+        return_content: yes
+        validate_certs: no
+      register: authorised_token
+    - debug:
+        msg: "Token is {{authorised_token.content}}"
+ 
+    - name: Creating a bmc Remedy work order {{date}} {{time}}
+      uri:
+        url: https://transunion-dev-restapi.onbmc.com/api/arsys/v1/entry/WOI:WorkOrderInterface_Create/
+        method: POST
+        validate_certs: no
+        headers:
+          Authorization: "AR-JWT {{authorised_token.content}}"
+          Content-Type: "Application/Json"
+        body_format: json
+        body: '{
+          "values": {
+        "Detailed Description": "Scan report url https://rapid7.transunion.com/api/3/reports/1898/history/1834/output",
+        "z1D_Action": "CREATE",
+        "First Name": "aishwarya",
+        "Last Name": "bhosale",
+        "Summary": "Vulnerability found on assets for scan testscan-08-10.100.80.158,10.100.80.158",
+        "Status": "Assigned",
+        "TU_ReportedSource":"Direct Input",
+        "RequesterLoginID":"abhosal"
+         }}'
+        status_code: 201
+      register: work_order_created
+    - debug:
+       msg: "WO Resp:- {{work_order_created}}"

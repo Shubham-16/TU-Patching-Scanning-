@@ -1,4 +1,6 @@
 ---
 satellite_host : 10.100.80.67
-satellite_fqdn : satellite.localhost.com
+satellite_fqdn : satellite.transunion.com
+satellite_fqdn_alias1: mimgl9cf899.transunion.com
+satellite_fqdn_alias2: satellite
 satellite_activationkey : tuKey-el7

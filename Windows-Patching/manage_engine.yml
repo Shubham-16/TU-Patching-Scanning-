@@ -1,0 +1,16 @@
+---
+- hosts: localhost
+  vars:
+     resources: []
+     ip_list: []
+     valid_ip_list: []
+     patch_list: []
+     filtered_patches: []
+     configuration_exists: 0
+     ip_with_id: {}
+     deployment_policy_id: ""
+  tasks: 
+    - include_role:
+          name: manage_engine
+
+

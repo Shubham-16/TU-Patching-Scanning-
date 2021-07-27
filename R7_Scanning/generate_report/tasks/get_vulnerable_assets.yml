@@ -1,0 +1,47 @@
+---
+ - block:
+      - name: get all assests
+        uri:
+          url: https://{{ insightvm_host }}/api/3/assets/search
+          user: "{{ insightvm_user }}"
+          password: "{{ insightvm_password }}"
+          validate_certs: no
+          method: POST
+          body_format: json
+          body: '{
+            "filters": [
+              {
+               "field": "ip-address",
+               "operator": "is",
+               "value": "{{item}}"
+              }
+            ],
+            "match": "all"
+          }'
+          force_basic_auth: yes
+          timeout: 2408
+        register: assets
+
+      - debug:
+         msg: "{{assets}}"
+
+      - name: copy the output to a local file {{date}} {{time}}
+        copy:
+          content: "{{  assets.json }}"
+          dest: "./site-assets.json"
+        delegate_to: localhost
+    
+      - name: Parsing the output {{date}} {{time}}
+        shell: python2 generate_report/files/parse-json.py "{{ scan_id }}"
+        register: output
+      
+      - debug:
+          msg: "{{ output.stdout_lines }}"
+     
+      - name: append list
+        set_fact:
+          vulnerable_ips: "{{ vulnerable_ips + [item] }}"
+        loop: "{{ output.stdout_lines }}"
+      
+      - debug:
+         msg: "{{ vulnerable_ips }}"

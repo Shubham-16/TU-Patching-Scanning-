@@ -10,7 +10,7 @@
 - name: Delete Katello Consumer File
   become: yes
   file:
-    path: "{{ home_path }}/	katello-ca-consumer-latest.noarch.rpm"
+    path: "{{ home_path }}katello-ca-consumer-latest.noarch.rpm"
     state: absent
   when: script_download is defined
 

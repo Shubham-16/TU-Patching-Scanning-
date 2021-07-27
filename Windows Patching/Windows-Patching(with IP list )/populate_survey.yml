@@ -1,7 +1,0 @@
----
-- hosts: localhost
-  vars:
-     deployment_policies: []
-  tasks:
-    - include_role:
-          name: populate_survey

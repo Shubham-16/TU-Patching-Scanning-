@@ -1,5 +1,0 @@
----
-# vars file for manage_engine
-
-host_csv_file_path: home
-csv_filename: windows_patching.csv

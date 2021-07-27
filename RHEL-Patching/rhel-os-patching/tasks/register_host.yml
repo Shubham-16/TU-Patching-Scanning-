@@ -5,7 +5,7 @@
   - name: make host entry
     lineinfile:
       path: /etc/hosts
-      line: "{{ satellite_host}} {{ satellite_fqdn }}"
+      line: "{{satellite_host }}    {{ satellite_fqdn }} {{ satellite_fqdn_alias1 }} {{ satellite_fqdn_alias2 }}"
     register: host_entry
     
   - include: log_file.yml
@@ -59,7 +59,7 @@
     when: script_download
 
   - name: run the script 
-    command: yum localinstall katello-ca-consumer-latest.noarch.rpm -y
+    shell: cd "{{home_path}}" && yum localinstall katello-ca-consumer-latest.noarch.rpm -y
     register: script_status
     when: script_download.failed != true
 

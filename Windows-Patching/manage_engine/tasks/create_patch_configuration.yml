@@ -1,0 +1,199 @@
+---
+- name: Get the authentication token from ManageEngine
+  uri:
+    url: "https://{{ manageengine_server }}/api/1.3/desktop/authentication?username={{ user }}&password={{ pass|b64encode }}&auth_type=local_authentication"
+    method: GET
+    validate_certs: no
+  register: token
+
+- name: Print the authentication token
+  debug:
+    msg: "{{ token.json.message_response.authentication.auth_data.auth_token }}"
+
+- name: Fetch details of all endpoints
+  uri:
+    url: "https://{{ manageengine_server }}/api/1.3/patch/allsystems?pagelimit=2000"
+    headers:
+       Authorization: "{{ token.json.message_response.authentication.auth_data.auth_token }}"
+    method: GET
+    validate_certs: no
+  register: systems
+
+- name: Map Ip with ID
+  set_fact:
+      ip_with_id: "{{ ip_with_id | combine({item.ip_address: item.resource_id}) }}"
+  loop: "{{ systems.json.message_response.allsystems }}"
+
+- name: Print dictionary of Ip and ID
+  debug:
+     msg: "{{ ip_with_id  }}"
+
+- name: Map System IP and ID and create a list of dictionary
+  shell: python2 manage_engine/files/map_system_with_id.py "{{ ip_with_id }}"
+  register: system_with_id
+
+- name: Print the IP list
+  debug:
+     msg: "{{ system_with_id.stdout }}"
+
+- name: Create list of IDs for all the target machines
+  set_fact:
+    resources: '{{ resources + [item.resource_id] }}'
+  when: item.ip_address in valid_ip_list
+  loop: "{{ system_with_id.stdout }}"
+
+- name: Filter Unique ID's
+  set_fact: 
+      resources: "{{ resources | unique }}"
+
+- name: Print the resource ID list 
+  debug:
+    msg: "{{ resources }}"
+
+- name: Mail if target machines are not listed on ManageEngine Sever 
+  include_role:
+    name: common/send-email
+  vars:
+    mail_subject: No Resources found on ManageEngine Server
+    mail_body: '<p>Resources are not present on MangageEngine server, hence terminating the job template with ID <b>"{{ tower_job_id }}"</b>. Check if agents are insatlled on the them. For detailed information, a log file has been sent on sepearte email.</p>' 
+  when: resources | length == 0
+
+- name: Fail the Job if target machines are not listed on ManageEngine Sever 
+  fail: 
+    msg: "Resources are not present on MangageEngine server, hence terminating the job template with ID {{ tower_job_id }}. Check if agents are insatlled on target them. For detailed information, a log file has been sent on sepearte email."
+  when: resources | length == 0
+
+- name: Fetch all missing patches  
+  uri:
+    url: "https://{{ manageengine_server }}/api/1.3/patch/allpatches?patchstatusfilter={{ status_type }}&pagelimit=2000"
+    headers:
+       Authorization: "{{ token.json.message_response.authentication.auth_data.auth_token }}"
+    method: GET
+    validate_certs: no
+  register: patches
+
+- name: Filter all the Security and Rollup patches and create a list 
+  set_fact:
+    patch_list: '{{ patch_list + [item.patch_id] }}'
+  when: item.update_name == "Security Updates" or item.update_name == "Rollups"
+  loop: "{{ patches.json.message_response.allpatches }}"
+
+- name: Print the patch list 
+  debug:
+    msg: "{{ patch_list }}"
+
+- name: Send Email if there are no Security and Rollup patches available 
+  include_role:
+    name: common/send-email
+  vars:
+    mail_subject: No Security or Rollups Patches available
+    mail_body: '<p>There are no Security and Rollups patches available for the target machines. Hence terminating the job template with ID <b>"{{ tower_job_id }}"</b> and sending logs in a seperate email</p>' 
+  when: patch_list | length == 0
+
+- name: Fail if there are no Security or Rollups patches available 
+  fail: 
+    msg: "There are no Security and Rollups patches available for the target machines. Hence terminating the job template with ID {{ tower_job_id }} and sending logs in a seperate email. "
+  when: patch_list | length == 0
+
+- name: Fetch all deployment policies 
+  uri:
+    url: "https://{{ manageengine_server }}/api/1.3/patch/deploymentpolicies"
+    headers:
+       Authorization: "{{ token.json.message_response.authentication.auth_data.auth_token }}"
+    method: GET
+    validate_certs: no
+  register: dp
+
+- name: Filter Out deploymnet policy ID and store it into a variable
+  set_fact:
+     deployment_policy_id: "{{ item.template_id }}"
+  when: item.template_name == deployment_policy
+  loop: "{{dp.json.message_response.deploymentpolicies}}"
+
+- name: Set the target data for the provided machines
+  uri:
+    url: "https://{{ manageengine_server }}/dcapi/patch/manualdeployment/patchConfig?autoPopulate=true&isOnlyApproved=false"
+    headers:
+       Authorization: "{{ token.json.message_response.authentication.auth_data.auth_token }}"
+       Content-Type: application/patchConfig.v1+json
+       Accept: application/patchConfig.v1+json
+    body_format: json
+    validate_certs: no
+    body: {
+    "operation":  "INSTALL",
+    "patchIDs":  [],
+    "criteriaJSON":  {},
+    "dcViewFilterID":  "",
+    "resourceIDs":  "{{ resources }}"
+    }
+    method: POST
+  register: target
+
+- name: Print all patches related to given target machines
+  debug:
+     msg: "{{ target.json.patchIDs }}"
+
+- name: Filter all the Security and Rollups patches
+  set_fact:
+    filtered_patches: '{{ filtered_patches + [item] }}'
+  when:  item | string in target.json.patchIDs
+  loop: "{{ patch_list }}"
+
+- name: Print apllicable patches
+  debug:
+     msg: "{{ filtered_patches }}"
+
+- name: Send Email if there are no Security and Rollups patches available for the provided target machine/machines.
+  include_role:
+    name: common/send-email
+  vars:
+    mail_subject: No Security or Rollups Patches available
+    mail_body: '<p>There are no Security and Rollups patches available for the target machines. Hence terminating the job template with ID <b>"{{ tower_job_id }}"</b>and sending logs in a seperate email.</p>' 
+  when: filtered_patches | length == 0
+
+- name: Fail if there are no Security and Rollups patches available 
+  fail: 
+    msg: "There are no Security and Rollups patches available for the target machines. Hence terminating the job template with ID {{ tower_job_id }} and sending logs in a seperate email."
+  when: filtered_patches | length == 0
+
+- name: Create the patch configuration for the provided target machines
+  uri:
+    url: "https://{{ manageengine_server }}/dcapi/patch/manualdeployment"
+    headers:
+      Authorization: "{{ token.json.message_response.authentication.auth_data.auth_token }}"
+      Content-Type: application/patchDeploy.v1+json
+    body_format: json
+    validate_certs: no
+    body: {
+    "collectionType":  1,
+    "targetData":  "{{ target.json.targetData }}",
+    "refreshMinRetry":  1,
+    "configType":  "computer",
+    "configDetails":  [
+                          {
+                              "details":  [
+                                              {
+                                                  "patchIDs": "{{ filtered_patches }}"
+                                              }
+                                          ],
+                              "configName":  "PATCH_INSTALL"
+                          }
+                      ],
+    "applyAtStartupLogon":  false,
+    "continueDeployment":  false,
+    "description":  "{{ description }}",
+    "logonStartupMinRetry":  1,
+    "platform":  "windows",
+    "label":  "{{ label }}",
+    "deploymentPolicyId":  "{{deployment_policy_id}}",
+    "enableRetry":  true,
+    "applyAtRefresh":  false,
+    "noOfRetries":  2,
+    "applyAlways":  false
+    }
+    method: POST
+  register: config_details
+
+- name: Print the Patch configuration details 
+  debug:
+    msg: "{{ config_details }}"

@@ -1,0 +1,53 @@
+---
+# tasks file for download_job_log
+- name: Create a directory to store the ManageEngine Job log
+  file:
+    path: /var/log/Manageengine_job_logs/{{ 'workflow_job-' + tower_workflow_job_id | string }}
+    state: directory
+    mode: '0755'
+
+- name: fetch all workflow nodes
+  uri:
+    url: "https://{{ lookup('env', 'TOWER_HOST') }}/api/v2/workflow_jobs/{{ tower_workflow_job_id }}/workflow_nodes/"
+    method: GET
+    user: "{{ lookup('env', 'TOWER_USERNAME') }}"
+    password: "{{ lookup('env', 'TOWER_PASSWORD') }}"
+    force_basic_auth: yes
+    validate_certs: no
+    return_content: yes
+    status_code: 200
+  register: nodes
+     
+- name: Set the job ids 
+  set_fact:
+    job_ids: '{{ job_ids + [item.summary_fields.job.id] }}'
+  when: item.job != None and item.summary_fields.job.name != 'Windows patching Logs( with CSV)' and item.summary_fields.job.type == 'job'
+  loop: "{{ nodes.json.results }}"
+
+- name: Print all job ids
+  debug: 
+    msg: "{{ job_ids }}"
+
+- name: Download log file at /var/log/Manageengine_job_logs
+  get_url:
+    url: "http://{{ lookup('env', 'TOWER_HOST') }}/api/v2/jobs/{{ item }}/stdout?format=txt_download"
+    username: "{{ lookup('env', 'TOWER_USERNAME') }}"
+    password: "{{ lookup('env', 'TOWER_PASSWORD') }}"
+    dest: /var/log/Manageengine_job_logs/{{ 'workflow_job-' + tower_workflow_job_id | string }}
+    mode: '0440'
+    validate_certs: no
+    force_basic_auth: yes
+  loop: "{{ job_ids }}"
+
+- name: Assemble from fragments from a directory
+  assemble:
+    src: /var/log/Manageengine_job_logs/{{ 'workflow_job-' + tower_workflow_job_id | string }}
+    dest: /var/log/Manageengine_job_logs/{{ 'workflow_job-' + tower_workflow_job_id | string }}/{{ 'patching_log-' + tower_workflow_job_id | string }}.txt
+
+- name: Sending an e-mail with log files
+  include_role:
+    name: common/send-email
+  vars:
+    mail_subject: Log files for Windows Patching.
+    mail_body: '<p> Attached below is the log file for Windows patching.</p>'
+    attachment_file: "/var/log/Manageengine_job_logs/{{ 'workflow_job-' + tower_workflow_job_id | string }}/{{ 'patching_log-' + tower_workflow_job_id | string }}.txt"

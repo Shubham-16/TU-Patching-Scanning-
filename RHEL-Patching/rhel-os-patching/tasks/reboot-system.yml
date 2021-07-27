@@ -7,7 +7,7 @@
   ignore_errors: true
 
 # this task is to wait for 3 minutues for system to come up after the reboot
-- name: pause for 180 secs
+- name: pause for 240 secs
   pause:
     minutes: "{{ waiting_time }}"
 
