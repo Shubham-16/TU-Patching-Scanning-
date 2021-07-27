@@ -1,0 +1,60 @@
+---
+# tasks file for download_job_log
+- name: Create a directory to store the ManageEngine Job log
+  file:
+    path: /var/log/Manageengine_job_logs/{{ 'workflow_job-' + tower_workflow_job_id | string }}
+    state: directory
+    mode: '0755'
+
+- name: fetch all workflow nodes
+  uri:
+    url: "https://{{ lookup('env', 'TOWER_HOST') }}/api/v2/workflow_jobs/{{ tower_workflow_job_id }}/workflow_nodes/"
+    method: GET
+    user: "{{ lookup('env', 'TOWER_USERNAME') }}"
+    password: "{{ lookup('env', 'TOWER_PASSWORD') }}"
+    force_basic_auth: yes
+    validate_certs: no
+    return_content: yes
+    status_code: 200
+  register: nodes
+     
+- name: Set the job ids 
+  set_fact:
+    job_ids: '{{ job_ids + [item.summary_fields.job.id] }}'
+  when: item.job != None and item.summary_fields.job.name != 'Job Log' and item.summary_fields.job.type == 'job'
+  loop: "{{ nodes.json.results }}"
+
+- name: Print all job ids
+  debug: 
+    msg: "{{ job_ids }}"
+
+- get_url:
+    url: "http://{{ lookup('env', 'TOWER_HOST') }}/api/v2/jobs/{{ item }}/stdout?format=txt_download"
+    username: "{{ lookup('env', 'TOWER_USERNAME') }}"
+    password: "{{ lookup('env', 'TOWER_PASSWORD') }}"
+    dest: /var/log/Manageengine_job_logs/{{ 'workflow_job-' + tower_workflow_job_id | string }}
+    mode: '0440'
+    validate_certs: no
+    force_basic_auth: yes
+  loop: "{{ job_ids }}"
+
+- name: Assemble from fragments from a directory
+  assemble:
+    src: /var/log/Manageengine_job_logs/{{ 'workflow_job-' + tower_workflow_job_id | string }}
+    dest: /var/log/Manageengine_job_logs/{{ 'workflow_job-' + tower_workflow_job_id | string }}/{{ 'patching_log-' + tower_workflow_job_id | string }}.txt
+
+- name: Include vault file 
+  include_vars: ../../manage_engine/vars/vault.yml
+  no_log: True
+
+- name: Sending an e-mail with log files
+  mail:
+    host: "{{ host }}"
+    port: "{{ port }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    to: "{{ to }}"
+    subject: Log files for Windows Patching
+    subtype: html
+    body: "<p> Hi Team,<br/><br/> Below are the log files for Windows patching.</p> "
+    attach: /var/log/Manageengine_job_logs/{{ 'workflow_job-' + tower_workflow_job_id | string }}/{{ 'patching_log-' + tower_workflow_job_id | string }}.txt

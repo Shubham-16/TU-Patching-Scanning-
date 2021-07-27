@@ -1,0 +1,166 @@
+---
+
+  - name: Include vars file
+    include_vars: ../vars/vars.yml
+    no_log: True
+  
+  - name: Include lauch scan role vars
+    include_vars: ../vars/report_req_vars.yml
+    no_log: True
+
+  - block:
+     - block:
+        - name: Create a txt file with user query passed {{date}} {{time}}
+          copy:
+           content: "{{ sql_query }}"
+           dest: "generate_report/files/sql-query.txt"
+          delegate_to: localhost
+
+        # - name: Get the file contents
+        #   set_fact: 
+        #    file_content: "{{ lookup('file', 'generate_report/files/sql-query.txt') }}"
+
+        - name: Format the file query contents {{date}} {{time}}
+          shell: python2 generate_report/files/format-sql.py
+          register: formatted_file
+        - debug:
+           msg: "{{formatted_file.stdout}}"
+
+        - name: Configure report on scan success {{date}} {{time}}
+          ignore_errors: true
+          uri:
+           url: https://{{ insightvm_host }}/api/3/reports
+           user: "{{insightvm_user}}"
+           password: "{{insightvm_password}}"
+           method: POST
+           # headers:
+           #   Content-Type: 'application/json'
+           #   Accept: 'application/json'
+           body_format: json
+           body:  '{ 
+           "filters": {
+           "severity": "all",
+           "statuses": ["vulnerable","vulnerable","potentially-vulnerable"]
+          },
+          "format": "sql-query",
+          "language": "en-US",
+          "name": "{{ scan_report_name }}_{{ansible_date_time.date}}_{{ansible_date_time.time}}",
+          "query": "{{ formatted_file.stdout }}",
+          "scope": {
+            "site": [{{ scan_site_id }}],
+            "scan": {{ site_scan_id | int }}
+          },
+          "template": "executive-overview",
+          "timezone": "America/Los_Angeles",
+          "version": "2.3.0"
+        }'
+           validate_certs: no
+           force_basic_auth: yes
+           status_code: 201
+          register: output1
+
+
+        - name: Send email if report not configured due to some issue
+          include_role:
+            name: common/send_email
+          vars:
+            mail_subject: Failed to create Scan Report for completed scan {{ scan_name }}.
+            mail_body: '<p> Report {{ scan_report_name }} for completed scan {{ scan_name }} could not be configured, as the issue was {{ output1.json.message }}. Please check the log file for more details, sent on a seperate email. '
+          when: output1.status != 201
+        
+        - name: Abort report generation tasks
+          fail:
+            msg: "Aborting report generation tasks, as there was an issue:- {{ output1.json.message }}."
+          when: output1.status != 201  
+      
+        - name: Get configured report id {{date}} {{time}}
+          set_fact:
+           configured_report_id: "{{ output1.json.id }}"
+    
+
+
+        - name: Generate the configured report {{date}} {{time}}
+          uri:
+           url: https://{{ insightvm_host }}/api/3/reports/{{configured_report_id}}/generate
+           user: "{{insightvm_user}}"
+           password: "{{insightvm_password}}"
+           method: POST
+           validate_certs: no
+           force_basic_auth: yes
+           status_code: 200
+          register: output2
+      
+        - name: Get the generated report instance id {{date}} {{time}}
+          set_fact:
+           report_instance_id: "{{ output2.json.id }}"
+        
+        - name: Delay some time for report generation {{date}} {{time}}
+          wait_for: 
+           timeout: 128
+    
+        - name: Create a directory to store scanned reports {{date}} {{time}}
+          file:
+           path: /{{ report_directory }}
+           state: directory
+           mode: '0755'
+        
+        - name: Download the scan report {{date}} {{time}}
+          include: download_report.yml
+
+        - include_tasks: get_vulnerable_assets.yml
+          loop: "{{ valid_ip_list }}"
+        
+        - debug:
+           msg: "{{ vulnerable_ips }}"
+   
+        # - name: Fetch scanned assets for any critical vulnerabilities {{date}} {{time}}
+        #   uri:
+        #    #url: https://{{insightvm_host}}/api/3/sites/{{ scan_site_id }}/assets
+        #    url: https://{{insightvm_host}}/api/3/sites/{{ scan_site_id }}/assets?size=800
+        #    user: "{{ insightvm_user }}"
+        #    password: "{{ insightvm_password }}"
+        #    validate_certs: no
+        #    method: GET
+        #    force_basic_auth: yes
+        #    timeout: 2408
+        #   register: site_assets
+
+        # - name: copy the output to a local file {{date}} {{time}}
+        #   copy:
+        #    content: "{{  site_assets.json }}"
+        #    dest: "./site-assets.json"
+        #   delegate_to: localhost
+  
+        # - name: Parsing the output {{date}} {{time}}
+        #   shell: python2 generate_report/files/parse-json.py "{{scan_id}}"
+        #   register: output
+        # - debug:
+        #    msg: "{{ output.stdout_lines }}"
+  
+        - name: check ips {{date}} {{time}}
+          set_fact:
+           flag: "{{ ( vulnerable_ips | length > 0) | ternary('true', 'false') }}"
+        - debug:
+           msg : "flag value is {{ flag }}"
+       when:  scan_state  == "finished"
+    rescue: 
+       - name: Send an email if any task fails {{date}} {{time}}
+         include_role:
+          name: common/send_email
+         vars:
+          mail_subject: Failed to perform report generation tasks for {{ scan_name }}
+          mail_body: 'Failed to perform report generation tasks for completed scan {{ scan_name }}. The issue was:- {{ output2.json.message }}. Please check log file for more details, sent on a seperate email. '
+        #  mail:
+        #   host: smtp.gmail.com
+        #   port: 587
+        #   username: "{{ smtp_username }}"
+        #   password: "{{ smtp_password }}"
+        #   to: "{{ email_id }}"
+        #   subject: Failed to perform tasks for {{ scan_name }}
+        #   body: 'Hi team, failed to perform report generation tasks for completed scan {{ scan_name }} '
+        # delegate_to: localhost
+          
+       - name: Abort this role tasks execution if scan report generation tasks failed {{date}} {{time}}
+         fail:
+          msg: Aborting playbook execution, as report generation tasks failed, with error:- {{ output2.json.message }}
+         when: output1.status != 201 or  output2.status  != 200 or  output.status  != 200 

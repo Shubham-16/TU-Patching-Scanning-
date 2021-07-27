@@ -8,6 +8,5 @@
   vars:
      content: "Fetching the details of the host before and after the patching and storing it /var/log/patching_archive"
      status: "INFO"
-  when: pre_checks
  
 

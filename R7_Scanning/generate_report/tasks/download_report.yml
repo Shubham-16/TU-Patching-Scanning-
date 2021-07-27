@@ -1,0 +1,39 @@
+---
+  - name: Include vars file
+    include_vars: ../vars/vars.yml
+    no_log: True
+  
+  - name: Include lauch scan role vars
+    include_vars: ../vars/report_req_vars.yml
+    no_log: True
+  - block:     
+      - name: Download scan report {{date}} {{time}}
+        uri:
+          url: https://{{insightvm_host}}/api/3/reports/{{configured_report_id}}/history/{{report_instance_id}}/output
+          user: "{{insightvm_user}}"
+          password:  "{{insightvm_password}}"
+          force_basic_auth: yes
+          validate_certs: no
+          return_content: yes
+          method: GET
+        register: output3
+      - debug: 
+          msg: "{{ output3.content }}"
+
+      - name: Create a report file {{date}} {{time}}
+        copy:
+          content: "{{ output3.content }}"
+          dest: /{{ report_directory }}/{{scan_name}}_{{ansible_date_time.date}}_{{ansible_date_time.time}}.csv
+        delegate_to: localhost
+    rescue:
+     - name: Send an email if any task fails {{date}} {{time}}
+       include_role:
+        name: common/send_email
+       vars:
+        mail_subject: Failed to download report from Rapid7 InsightVM
+        mail_body: 'Downloading report from Rapid7 InsightVM on Ansible Tower VM has failed. Following is the issue: {{ output3.json.message }}'
+
+     - name: Abort report downloading tasks
+       fail:
+         msg: "Aborting report downloading tasks, as there was an issue:- {{ output3.json.message }}."
+       when: output3.json.status != 200   

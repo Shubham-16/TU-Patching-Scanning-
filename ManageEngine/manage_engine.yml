@@ -1,0 +1,12 @@
+---
+- hosts: localhost
+  vars:
+     resources: []
+     ip_list: '{{ ip.split(",") }}'
+     patch_list: []
+     filtered_patches: []
+  tasks:
+    - include_role:
+          name: manage_engine
+
+

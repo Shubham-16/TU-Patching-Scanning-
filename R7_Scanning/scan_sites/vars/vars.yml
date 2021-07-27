@@ -1,0 +1,7 @@
+ansible_tower: 10.100.80.185
+ansible_user: admin
+ansible_password: tucibil!23
+job_templateID: 13
+insightvm_host: rapid7.transunion.com
+insightvm_user: abhosal
+insightvm_password: Welc0me$1821

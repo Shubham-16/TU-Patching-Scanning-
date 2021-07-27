@@ -17,7 +17,7 @@
         name: common/send-email
       vars:
         mail_subject: Failed to check disk space.
-        mail_body: '<p>There are some problems while checking disk soace on host <b> {{ inventory_hostname }} </b></p>'
+        mail_body: '<p>Hi Team,</p> <br><p>There are some problems while checking disk soace on host <b> {{ inventory_hostname }} </b></p>'
       
     - name: Including details about disk space in log 
       include: log_file.yml
@@ -25,16 +25,20 @@
         content: "Sending an email if diskspace is less than required {{ disk_space_status.stdout  }}"
         status: "ERROR"
 
-    - name: Failed to check disk space status
+    - name: Failed to check process status
       fail:
-        msg: "Something went wrong while checking disk space status"
+        msg: "Something went wrong while getting uptime of machine"
+
+- name: To display Disk space status
+  debug:
+      msg: "{{ disk_space_status.stdout }}"
 
 - name: Sending an email when there is insuffiecient disk space.
   include_role:
     name: common/send-email
   vars:
       mail_subject: Abort Patching, less disk space available.
-      mail_body: '<p>We are aborting patching on  host <b>{{ inventory_hostname }}</b> because it uses {{ disk_space_limit }}% or more disk space, which is insuffiecient space for patching </p>'
+      mail_body: '<p>Hi Team,</p> <br> <p> host <b>{{ inventory_hostname }}</b> using {{ disk_space_limit }}% or more disk space, which is insuffiecient space for patching </p>'
   when: disk_space_status.stdout == "insuffiecient_space"
 
 - name: Including details about disk space in log 

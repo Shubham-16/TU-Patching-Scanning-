@@ -1,3 +1,0 @@
----
-# vars file for send_email
-vault_file_path: ../vars/vault.yml
