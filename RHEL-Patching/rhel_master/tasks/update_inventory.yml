@@ -58,7 +58,7 @@
         
             # To add those hosts which are not already available in group of inventory.
             - name: Host to be added
-              debug: msg="{{ valid_hosts | difference(existing_hosts_list) | list }}"
+              debug: msg="{{ hosts | difference(existing_hosts_list) | list }}"
         
         
         
@@ -75,7 +75,7 @@
                 body:
                   name: "{{ item }}"
                 status_code: 201
-              loop: "{{ valid_hosts | difference(existing_hosts_list) | list }}"
+              loop: "{{ hosts | difference(existing_hosts_list) | list }}"
           rescue:
             - fail:
                 msg: "Problem While Updating Inventory, Check the Inventory and group names and also the APIs"

@@ -1,0 +1,56 @@
+---   
+  - name: Include vars file
+    include_vars: ../vars/vars.yml
+    no_log: True
+
+  - name: Include request vars file
+    include_vars: ../vars/request_vars.yml
+    no_log: True
+  - name: Perform tasks for successful request {{date}} {{time}}
+    block:
+    - name: Run Scan {{date}} {{time}}
+          #ignore_errors : yes
+      uri:
+        url: https://{{ insightvm_host }}/api/3/sites/{{ scan_site_id }}/scans
+        user: "{{ insightvm_user }}"
+        password: "{{ insightvm_password }}"
+        validate_certs: no
+        method: POST
+        force_basic_auth: yes
+        body_format : json
+           #body: "{{ (ip_address != '') | ternary( request_with_ip , request_full_scan ) }}"
+        body: "{{ request_with_ip }}"
+        status_code: 201
+      register: launched_scan
+    - debug:
+        msg: "result got {{launched_scan.json}}, status: {{launched_scan.status}}, message:{{launched_scan.msg}} scan_id:{{launched_scan.json.id}}"
+    
+    - name: Get launched scan id {{date}} {{time}}
+      set_fact:
+        scan_id: "{{ launched_scan.json.id }}"
+    - debug:
+        msg:  "Scan {{scan_name}} launched successfully on Rapid7 InsightVM with scan_id:{{ scan_id }}"
+      when: launched_scan.status  == 201
+    rescue:
+      - name: Send an email notification if no scan was triggerred {{date}} {{time}}
+        include_role:
+         name: common/send_email
+        vars:
+         mail_subject: Failed to launch scan on requested site
+         mail_body: 'Requested scan was not triggered on this site {{scan_site_name}}. Please check the log file for more details.'
+        # mail:
+        #   host: smtp.gmail.com
+        #   port: 587
+        #   username: "{{smtp_username}}"
+        #   password: "{{smtp_password}}"
+        #   to: "{{ email_id }}"
+        #   subject: Failed to launch scan on requested site
+        #   body: 'Hi team, requested scan was not triggered on this site {{scan_site_name}}. Following was the error: {{ launched_scan.json.message }}'
+        #delegate_to: localhost
+    
+      - name: Abort this role tasks execution if no scan was triggered {{date}} {{time}}
+        fail:
+          msg: Aboring playbook execution, as scan launch failed
+        when:  site_check_assets.status != 200 or launched_scan.status != 201 or site_check_asset.status  != 200
+     
+       
