@@ -1,3 +1,6 @@
 ---
-MAIL_HOST : smtp.corp.transunion.com
-MAIL_PORT : 25
+MAIL_HOST : smtp.gmail.com
+MAIL_PORT : 587
+receiver_email: kumar.shubham010697@gmail.com
+username: shubham.kumar@gslab.com
+password: avudafnzggxulxwi

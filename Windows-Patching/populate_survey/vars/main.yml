@@ -1,6 +1,6 @@
 ---
 # vars file for populate_survey
-manageEngine_workflow_template_id: 24
+manageEngine_workflow_template_id: 23
 survey_body: {
     "name": "",
     "description": "",
