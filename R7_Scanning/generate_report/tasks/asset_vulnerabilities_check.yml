@@ -88,7 +88,7 @@
             body_format: json
             body: '{
               "values": {
-            "Detailed Description": "Scan report url https://{{insightvm_host}}/api/3/reports/{{configured_report_id}}/history/{{report_instance_id}}/output",
+            "Detailed Description": "Scan report url to download using Rapid7 credentials:- {{ report_uri }}",
             "z1D_Action": "CREATE",
             "First Name": "{{ first_name }}",
             "Last Name": "{{ last_name }}",
