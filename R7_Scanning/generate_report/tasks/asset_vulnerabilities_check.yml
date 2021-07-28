@@ -60,7 +60,7 @@
             #attachment_file: "/{{ report_directory }}/{{scan_name}}_{{ansible_date_time.date}}_{{ansible_date_time.time}}.csv.zip"   
        
         - name: Authenticate to bmc Remedy AR system and generate a token {{date}} {{time}}
-          #ignore_errors: true
+          ignore_errors: true
           uri:
             url: https://{{bmc_remedy_host}}/api/jwt/login
             # headers:
@@ -77,7 +77,7 @@
 
   
         - name: Creating a bmc Remedy work order {{date}} {{time}}
-          ignore_errors: false
+          ignore_errors: true
           uri:
             url: https://{{bmc_remedy_host}}/api/arsys/v1/entry/WOI:WorkOrderInterface_Create/
             method: POST

@@ -1,5 +1,13 @@
-MAIL_HOST: smtp.corp.transunion.com
-MAIL_PORT: 25
-receiver_email: Aishwarya.Bhosale@transunion.com
+# MAIL_HOST: smtp.corp.transunion.com
+# MAIL_PORT: 25
+# receiver_email: Aishwarya.Bhosale@transunion.com
+# report_directory: /var/log/Rapid7_Scan_Reports
+# scan_logs_directory: /var/log/Rapid7_Scan_Logs
+
+MAIL_USERNAME: idmsubs@gslab.com
+MAIL_PASSWORD: eefncgnfzgvxjsvi
+receiver_email: aishwarya.bhosale@gslab.com
 report_directory: /var/log/Rapid7_Scan_Reports
 scan_logs_directory: /var/log/Rapid7_Scan_Logs
+MAIL_HOST: smtp.gmail.com
+MAIL_PORT: 587

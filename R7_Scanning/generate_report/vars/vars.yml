@@ -1,15 +1,27 @@
-insightvm_host: rapid7.transunion.com
-insightvm_user: abhosal
-insightvm_password: Welc0me$1821
-smtp_host: smtp.corp.transunion.com
-# smtp_username: 
-# smtp_password:
-email_id: Aishwarya Bhosale <Aishwarya.Bhosale@transunion.com>
-ansibletower_host: 10.100.80.185
+# insightvm_host: rapid7.transunion.com
+# insightvm_user: abhosal
+# insightvm_password: Welc0me$1821
+# smtp_host: smtp.corp.transunion.com
+# # smtp_username: 
+# # smtp_password:
+# email_id: Aishwarya Bhosale <Aishwarya.Bhosale@transunion.com>
+# ansibletower_host: 10.100.80.185
+# ansibletower_user: admin
+# ansibletower_password: tucibil!23
+# bmc_remedy_host: transunion-dev-restapi.onbmc.com
+# bmc_remedy_user: abhosal
+# bmc_remedy_password: tRanunion#2020
+# vulnerable_assets: []
+# asset_ip: []
+
+insightvm_host: 10.136.57.214:3780
+insightvm_user: admin
+insightvm_password: gsLab!23
+ansibletower_host: 10.136.57.205
 ansibletower_user: admin
-ansibletower_password: tucibil!23
-bmc_remedy_host: transunion-dev-restapi.onbmc.com
-bmc_remedy_user: abhosal
-bmc_remedy_password: tRanunion#2020
+ansibletower_password: gsLab!23
+smtp_username: idmsubs@gslab.com
+smtp_password: eefncgnfzgvxjsvi
+email_id: Aishwarya Bhosale <aishwarya.bhosale@gslab.com>
 vulnerable_assets: []
 asset_ip: []
