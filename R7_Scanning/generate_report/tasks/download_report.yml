@@ -18,11 +18,12 @@
          return_content: yes
          method: GET
         register: report_details
+        
+      - name: Set the report url
         set_fact:
           report_url: "{{ report_details.json.uri }}"
-  
       - debug: 
-          msg: "Rpeort details:{{ report_details.content }}, Report file download url: {{ report_url }}"
+          msg: "Report details:{{ report_details.content }}, Report file download url: {{ report_url }}"
     rescue:
       - name: Send an email if any task fails {{date}} {{time}}
         include_role:
