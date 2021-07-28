@@ -54,44 +54,44 @@
 
 - debug:
     msg: " Resource IDs :- {{ json_data.resources }} ---- Patch IDs :- {{ patch_ids }}  ---- Deployment policy ID :- {{deployment_policy_id}} "
-# - name: Create the patch configuration for the provided target machines
-#   uri:
-#     url: "https://{{ manageengine_server }}/dcapi/patch/manualdeployment"
-#     headers:
-#       Authorization: "{{ token.json.message_response.authentication.auth_data.auth_token }}"
-#       Content-Type: application/patchDeploy.v1+json
-#     body_format: json
-#     validate_certs: no
-#     body: {
-#     "collectionType":  1,
-#     "targetData":  "{{ target.json.targetData }}",
-#     "refreshMinRetry":  1,
-#     "configType":  "computer",
-#     "configDetails":  [
-#                           {
-#                               "details":  [
-#                                               {
-#                                                   "patchIDs": "{{ filtered_patches }}"
-#                                               }
-#                                           ],
-#                               "configName":  "PATCH_INSTALL"
-#                           }
-#                       ],
-#     "applyAtStartupLogon":  false,
-#     "continueDeployment":  false,
-#     "description":  "{{ description }}",
-#     "logonStartupMinRetry":  1,
-#     "platform":  "windows",
-#     "label":  "{{ label }}",
-#     "deploymentPolicyId":  "{{deployment_policy_id}}",
-#     "enableRetry":  true,
-#     "applyAtRefresh":  false,
-#     "noOfRetries":  2,
-#     "applyAlways":  false
-#     }
-#     method: POST
-#   register: config_details
+- name: Create the patch configuration for the provided target machines
+  uri:
+    url: "https://{{ manageengine_server }}/dcapi/patch/manualdeployment"
+    headers:
+      Authorization: "{{ token.json.message_response.authentication.auth_data.auth_token }}"
+      Content-Type: application/patchDeploy.v1+json
+    body_format: json
+    validate_certs: no
+    body: {
+    "collectionType":  1,
+    "targetData":  "{{ target.json.targetData }}",
+    "refreshMinRetry":  1,
+    "configType":  "computer",
+    "configDetails":  [
+                          {
+                              "details":  [
+                                              {
+                                                  "patchIDs": "{{ filtered_patches }}"
+                                              }
+                                          ],
+                              "configName":  "PATCH_INSTALL"
+                          }
+                      ],
+    "applyAtStartupLogon":  false,
+    "continueDeployment":  false,
+    "description":  "{{ description }}",
+    "logonStartupMinRetry":  1,
+    "platform":  "windows",
+    "label":  "{{ label }}",
+    "deploymentPolicyId":  "{{deployment_policy_id}}",
+    "enableRetry":  true,
+    "applyAtRefresh":  false,
+    "noOfRetries":  2,
+    "applyAlways":  false
+    }
+    method: POST
+  register: config_details
 
-# - name: Print the Patch configuration details 
-#   debug:
-#     msg: "{{ config_details }}"
+- name: Print the Patch configuration details 
+  debug:
+    msg: "{{ config_details }}"
