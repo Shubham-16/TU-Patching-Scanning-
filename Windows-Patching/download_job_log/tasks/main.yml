@@ -21,7 +21,7 @@
 - name: Set the job ids 
   set_fact:
     job_ids: '{{ job_ids + [item.summary_fields.job.id] }}'
-  when: item.job != None and item.summary_fields.job.name != 'Windows patching Logs( with IP list)' and item.summary_fields.job.type == 'job'
+  when: item.job != None and item.summary_fields.job.name != 'Windows patching Logs ( IP and Patch List )' and item.summary_fields.job.type == 'job'
   loop: "{{ nodes.json.results }}"
 
 - name: Print all job ids
@@ -44,10 +44,10 @@
     src: /var/log/Manageengine_job_logs/{{ 'workflow_job-' + tower_workflow_job_id | string }}
     dest: /var/log/Manageengine_job_logs/{{ 'workflow_job-' + tower_workflow_job_id | string }}/{{ 'patching_log-' + tower_workflow_job_id | string }}.txt
 
-- name: Sending an e-mail with log files
+- name: Sending an e-mail with log file
   include_role:
     name: common/send-email
   vars:
-    mail_subject: Log files for Windows Patching.
+    mail_subject: Log file for Windows Patching.
     mail_body: '<p> Attached below is the log file for Windows patching.</p>'
     attachment_file: "/var/log/Manageengine_job_logs/{{ 'workflow_job-' + tower_workflow_job_id | string }}/{{ 'patching_log-' + tower_workflow_job_id | string }}.txt"

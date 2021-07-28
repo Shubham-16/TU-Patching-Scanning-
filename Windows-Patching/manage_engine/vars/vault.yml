@@ -2,8 +2,4 @@
 manageengine_server: 10.136.58.181:8383
 user: shubkum
 pass: Anst2011pocpatch
-host: smtp.gmail.com
-port: 587
-username: shubham.kumar@gslab.com
-password: avudafnzggxulxwi 
-to: kumar.shubham010697@gmail.com
+
