@@ -6,6 +6,6 @@
 
 MAIL_USERNAME: idmsubs@gslab.com
 MAIL_PASSWORD: eefncgnfzgvxjsvi
-receiver_email: bhakti.chandan@gslab.com
+receiver_email: aishwarya.bhosale@gslab.com
 report_directory: /var/log/Rapid7_Scan_Reports
 scan_logs_directory: /var/log/Rapid7_Scan_Logs
