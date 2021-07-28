@@ -7,5 +7,5 @@
 - name: Create Patch Configuration
   import_tasks: create_patch_configuration.yml
 
-# - name: Check Patch Configuration
-#   import_tasks: check_configuration.yml
+- name: Check Patch Configuration
+  import_tasks: check_configuration.yml
