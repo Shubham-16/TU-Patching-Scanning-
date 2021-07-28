@@ -10,7 +10,7 @@
       delegate_to: localhost
       become: yes
       mail:
-        user: "{{ MAIL_USERNAME }}"
+        username: "{{ MAIL_USERNAME }}"
         password: "{{ MAIL_PASSWORD }}"
         # host: "{{ MAIL_HOST }}"
         # port: "{{ MAIL_PORT }}"

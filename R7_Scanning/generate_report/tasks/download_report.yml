@@ -9,8 +9,9 @@
   
   - block:
       - name: Get Report File downloadable url 
-        uri: https://{{insightvm_host}}/api/3/reports/{{configured_report_id}}/history/{{report_instance_id}}
-         url: "{{insightvm_user}}"
+        uri: 
+         url: https://{{insightvm_host}}/api/3/reports/{{configured_report_id}}/history/{{report_instance_id}}
+         user: "{{insightvm_user}}"
          password: "{{insightvm_password}}"
          force_basic_auth: yes
          validate_certs: no
