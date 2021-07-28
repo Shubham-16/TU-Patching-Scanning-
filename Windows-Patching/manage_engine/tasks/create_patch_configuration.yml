@@ -71,7 +71,7 @@
                           {
                               "details":  [
                                               {
-                                                  "patchIDs": "{{ filtered_patches }}"
+                                                  "patchIDs": "{{ patch_ids }}"
                                               }
                                           ],
                               "configName":  "PATCH_INSTALL"
