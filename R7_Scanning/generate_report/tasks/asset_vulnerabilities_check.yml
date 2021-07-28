@@ -20,7 +20,7 @@
             name: common/send_email
           vars:
             mail_subject: Scan successful
-            mail_body: 'Scaninng has been successfully done on requested scan site {{ scan_site_name }} with assets {{ final_list }}. Please find the link to download the Report:- https://{{insightvm_host}}/api/3/reports/{{configured_report_id}}/history/{{report_instance_id}}/output'
+            mail_body: 'Scaninng has been successfully done on requested scan site {{ scan_site_name }} with assets {{ final_list }}.Click <a href={{ report_url }}>link here</a> to download the scan report, authenticate using Rapid7 credentials.'
             #attachment_file:  "/{{ report_directory }}/{{scan_name}}_{{ansible_date_time.date}}_{{ansible_date_time.time}}.csv"
           
           # mail:
@@ -56,7 +56,7 @@
             name: common/send_email
           vars:
             mail_subject: Vulnerabilities found on assets by scan {{scan_name}}
-            mail_body: 'Scaninng has been successfully done on requested scan site {{ scan_site_name }} with assets {{ asset_list }} identified for vulnerabilities. Please find the link to download the report:- https://{{insightvm_host}}/api/3/reports/{{configured_report_id}}/history/{{report_instance_id}}/output.'
+            mail_body: 'Scaninng has been successfully done on requested scan site {{ scan_site_name }} with assets {{ asset_list }} identified for vulnerabilities. Click <a href={{ report_url }}>link here</a> to download the scan report, authenticate using Rapid7 credentials.'
             #attachment_file: "/{{ report_directory }}/{{scan_name}}_{{ansible_date_time.date}}_{{ansible_date_time.time}}.csv.zip"   
        
         - name: Authenticate to bmc Remedy AR system and generate a token {{date}} {{time}}
@@ -88,7 +88,7 @@
             body_format: json
             body: '{
               "values": {
-            "Detailed Description": "Scan report url to download using Rapid7 credentials:- {{ report_uri }}",
+            "Detailed Description": "Please find the Scan Report url to download {{ report_url }} ,authenticate by Rapid7 credentials.",
             "z1D_Action": "CREATE",
             "First Name": "{{ first_name }}",
             "Last Name": "{{ last_name }}",
