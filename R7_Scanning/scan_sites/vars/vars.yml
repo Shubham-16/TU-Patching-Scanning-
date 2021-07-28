@@ -2,6 +2,6 @@ ansible_tower: 10.136.57.205
 ansible_user: admin
 ansible_password: gsLab!23
 job_templateID: 31
-insightvm_host: 10.136.57.214
-insightvm_user: abhosal
-insightvm_password: Welc0me$1821
+insightvm_host: 10.136.57.214:3780
+insightvm_user: admin
+insightvm_password: gsLab!23
