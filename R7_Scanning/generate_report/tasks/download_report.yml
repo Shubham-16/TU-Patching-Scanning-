@@ -32,9 +32,9 @@
          mail_subject: Failed to get report file url link from Rapid7 InsightVM
          mail_body: 'Task to get report file url link from Rapid7 InsightVM has failed. Following is the issue: {{ report_details.json.message }}.Please check log file that will be sent on a seperate email'
      
-      - name: Abort this role tasks as report downloading failed {{date}} {{time}}
+      - name: Abort this role tasks as failed to get report url {{date}} {{time}}
         fail:
-         msg: "Aborting playbook execution, as report download task failed with error:- {{ report_details.json.message }}"
+         msg: "Aborting playbook execution, as report download task failed to get report url with error:- {{ report_details.json.message }}"
         when: report_details.status != 200
        
          
