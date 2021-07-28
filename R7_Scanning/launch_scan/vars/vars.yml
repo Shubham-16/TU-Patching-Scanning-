@@ -1,10 +1,10 @@
-insightvm_host: rapid7.transunion.com
-insightvm_user: abhosal
-insightvm_password: Welc0me$1821
-smtp_host: smtp.corp.transunion.com
-ansibletower_host: 10.100.80.185
+insightvm_host: 10.136.57.214:3780
+insightvm_user: admin
+insightvm_password: gsLab!23
+smtp_host: idmsubs@gslab.com
+ansibletower_host: 10.136.57.205
 ansibletower_user: admin
-ansibletower_password: tucibil!23
+ansibletower_password: gsLab!23
 # smtp_username: 
 # smtp_password:
-email_id: Aishwarya Bhosale <Aishwarya.Bhosale@transunion.com>
+email_id: Aishwarya Bhosale <aishwarya.bhosale@gslab.com>
