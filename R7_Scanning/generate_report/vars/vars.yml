@@ -23,8 +23,8 @@ ansibletower_password: gsLab!23
 smtp_username: idmsubs@gslab.com
 smtp_password: eefncgnfzgvxjsvi
 email_id: Aishwarya Bhosale <aishwarya.bhosale@gslab.com>
-bmc_remedy_host: transunion-dev-restapi.onbmc.com
-bmc_remedy_user: abhosal
-bmc_remedy_password: tRanunion#2020
+# bmc_remedy_host: transunion-dev-restapi.onbmc.com
+# bmc_remedy_user: abhosal
+# bmc_remedy_password: tRanunion#2020
 vulnerable_assets: []
 asset_ip: []
