@@ -21,7 +21,7 @@
 - name: Set the job ids 
   set_fact:
     job_ids: '{{ job_ids + [item.summary_fields.job.id] }}'
-  when: item.job != None and item.summary_fields.job.name != 'Windows patching Logs ( IP and Patch List )' and item.summary_fields.job.type == 'job'
+  when: item.job != None and item.summary_fields.job.name != 'Windows patching Logs ( Patch List )' and item.summary_fields.job.type == 'job'
   loop: "{{ nodes.json.results }}"
 
 - name: Print all job ids
