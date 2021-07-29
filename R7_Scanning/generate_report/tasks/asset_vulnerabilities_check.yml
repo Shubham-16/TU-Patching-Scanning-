@@ -59,50 +59,51 @@
             mail_body: 'Scaninng has been successfully done on requested scan site {{ scan_site_name }} with assets {{ asset_list }} identified for vulnerabilities. Click <a href={{ report_url }}>link here</a> to download the scan report, authenticate using Rapid7 credentials.'
             #attachment_file: "/{{ report_directory }}/{{scan_name}}_{{ansible_date_time.date}}_{{ansible_date_time.time}}.csv.zip"   
        
-        - name: Authenticate to bmc Remedy AR system and generate a token {{date}} {{time}}
-          ignore_errors: true
-          uri:
-            url: https://{{bmc_remedy_host}}/api/jwt/login
-            # headers:
-            #  - Content-Type: "application/x-www-form-urlencoded"
-            body_format: form-urlencoded
-            body: "username={{bmc_remedy_user}}&password={{bmc_remedy_password}}"
-            method: POST
-            status_code : 200
-            return_content: yes
-            validate_certs: no
-          register: authorised_token
-        - debug:
-           msg: "Token is {{authorised_token.content}}"
+        # - name: Authenticate to bmc Remedy AR system and generate a token {{date}} {{time}}
+        #   ignore_errors: true
+        #   uri:
+        #     url: https://{{bmc_remedy_host}}/api/jwt/login
+        #     # headers:
+        #     #  - Content-Type: "application/x-www-form-urlencoded"
+        #     body_format: form-urlencoded
+        #     body: "username={{bmc_remedy_user}}&password={{bmc_remedy_password}}"
+        #     method: POST
+        #     status_code : 200
+        #     return_content: yes
+        #     validate_certs: no
+        #   register: authorised_token
+        # - debug:
+        #   msg: "Token is {{authorised_token.content}}"
 
   
-        - name: Creating a bmc Remedy work order {{date}} {{time}}
-          ignore_errors: true
-          uri:
-            url: https://{{bmc_remedy_host}}/api/arsys/v1/entry/WOI:WorkOrderInterface_Create/
-            method: POST
-            validate_certs: no
-            headers:
-              Authorization: "AR-JWT {{authorised_token.content}}"
-              Content-Type: "Application/Json"
-            body_format: json
-            body: '{
-              "values": {
-            "Detailed Description": "Please find the Scan Report url to download {{ report_url }} ,authenticate by Rapid7 credentials.",
-            "z1D_Action": "CREATE",
-            "First Name": "{{ first_name }}",
-            "Last Name": "{{ last_name }}",
-            "Summary": "Vulnerability found on assets for scan {{ scan_name }}-{{ asset_list }}",
-            "Status": "Assigned",
-            "TU_ReportedSource": "Direct Input",
-            "RequesterLoginID": "{{ requester_loginid }}",
-            "Assignee Groups": "{{ wo_assignee_group_id }}"
-            }}'
-            status_code: 201
-          register: work_order_created
-        - debug:
-           msg: "WO Response:- {{work_order_created}}"
+        # - name: Creating a bmc Remedy work order {{date}} {{time}}
+        #   ignore_errors: true
+        #   uri:
+        #     url: https://{{bmc_remedy_host}}/api/arsys/v1/entry/WOI:WorkOrderInterface_Create/
+        #     method: POST
+        #     validate_certs: no
+        #     headers:
+        #       Authorization: "AR-JWT {{authorised_token.content}}"
+        #       Content-Type: "Application/Json"
+        #     body_format: json
+        #     body: '{
+        #       "values": {
+        #     "Detailed Description": "Please find the Scan Report url to download {{ report_url }} ,authenticate by Rapid7 credentials.",
+        #     "z1D_Action": "CREATE",
+        #     "First Name": "{{ first_name }}",
+        #     "Last Name": "{{ last_name }}",
+        #     "Summary": "Vulnerability found on assets for scan {{ scan_name }}-{{ asset_list }}",
+        #     "Status": "Assigned",
+        #     "TU_ReportedSource": "Direct Input",
+        #     "RequesterLoginID": "{{ requester_loginid }}",
+        #     "Assignee Groups": "{{ wo_assignee_group_id }}"
+        #     }}'
+        #     status_code: 201
+        #   register: work_order_created
+        # - debug:
+        #   msg: "WO Response:- {{work_order_created}}"
         
+        #task to send an email aftr WO creation, if needed.
         # - name: Send an email with report
         #   include_role:
         #     name: common/send_email
