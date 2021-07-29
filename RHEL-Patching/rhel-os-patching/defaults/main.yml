@@ -1,5 +1,5 @@
 ---
-satellite_organization: TUCIBIL
+satellite_organization: GSLab
 process_name: httpd
 uptime_limit: 120  #in days
 disk_space_limit: 80  #disk used in percentage.
