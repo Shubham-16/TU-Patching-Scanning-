@@ -74,7 +74,7 @@
 
 - name: Filter all the  patches and create a list 
   set_fact:
-    patch_list: '{{ patch_list | combine({item.patch_id: item.patch_description}) }}'
+    patch_list: '{{ patch_list | combine({item.patch_id: item.patch_description + "  ||  " + item.update_name}) }}'
   # when: item.update_name == "Security Updates" or item.update_name == "Rollups"
   loop: "{{ patches.json.message_response.allpatches }}"
 
