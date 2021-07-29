@@ -24,27 +24,27 @@
 - set_fact: 
      json_data: "{{lookup('file', '/tmp/patch.json') }}"
 
-- name: Set the target data for the provided machines
-  uri:
-    url: "https://{{ manageengine_server }}/dcapi/patch/manualdeployment/patchConfig?autoPopulate=true&isOnlyApproved=false"
-    headers:
-       Authorization: "{{ token.json.message_response.authentication.auth_data.auth_token }}"
-       Content-Type: application/patchConfig.v1+json
-       Accept: application/patchConfig.v1+json
-    body_format: json
-    validate_certs: no
-    body: {
-    "operation":  "INSTALL",
-    "patchIDs":  [],
-    "criteriaJSON":  {},
-    "dcViewFilterID":  "",
-    "resourceIDs":  "{{ json_data.resources }}"
-    }
-    method: POST
-  register: target
+# - name: Set the target data for the provided machines
+#   uri:
+#     url: "https://{{ manageengine_server }}/dcapi/patch/manualdeployment/patchConfig?autoPopulate=true&isOnlyApproved=false"
+#     headers:
+#        Authorization: "{{ token.json.message_response.authentication.auth_data.auth_token }}"
+#        Content-Type: application/patchConfig.v1+json
+#        Accept: application/patchConfig.v1+json
+#     body_format: json
+#     validate_certs: no
+#     body: {
+#     "operation":  "INSTALL",
+#     "patchIDs":  [],
+#     "criteriaJSON":  {},
+#     "dcViewFilterID":  "",
+#     "resourceIDs":  "{{ json_data.resources }}"
+#     }
+#     method: POST
+#   register: target
 
-- debug: 
-     msg: "{{ target }}"
+# - debug: 
+#      msg: "{{ target }}"
 
 - name: Get the patch ID of the selected patches
   set_fact:
@@ -53,45 +53,69 @@
   with_dict: "{{ json_data.patches }}"
 
 - debug:
-    msg: " Resource IDs :- {{ json_data.resources }} ---- Patch IDs :- {{ patch_ids }}  ---- Deployment policy ID :- {{deployment_policy_id}} "
-- name: Create the patch configuration for the provided target machines
+    msg: "Patch IDs :- {{ patch_ids }}  ---- Deployment policy ID :- {{deployment_policy_id}} "
+
+# - name: Create the patch configuration for the provided target machines
+#   uri:
+#     url: "https://{{ manageengine_server }}/dcapi/patch/manualdeployment"
+#     headers:
+#       Authorization: "{{ token.json.message_response.authentication.auth_data.auth_token }}"
+#       Content-Type: application/patchDeploy.v1+json
+#     body_format: json
+#     validate_certs: no
+#     body: {
+#     "collectionType":  1,
+#     "targetData":  "{{ target.json.targetData }}",
+#     "refreshMinRetry":  1,
+#     "configType":  "computer",
+#     "configDetails":  [
+#                           {
+#                               "details":  [
+#                                               {
+#                                                   "patchIDs": "{{ patch_ids }}"
+#                                               }
+#                                           ],
+#                               "configName":  "PATCH_INSTALL"
+#                           }
+#                       ],
+#     "applyAtStartupLogon":  false,
+#     "continueDeployment":  false,
+#     "description":  "{{ description }}",
+#     "logonStartupMinRetry":  1,
+#     "platform":  "windows",
+#     "label":  "{{ label }}",
+#     "deploymentPolicyId":  "{{deployment_policy_id}}",
+#     "enableRetry":  true,
+#     "applyAtRefresh":  false,
+#     "noOfRetries":  2,
+#     "applyAlways":  false
+#     }
+#     method: POST
+#   register: config_details
+
+# - name: Print the Patch configuration details 
+#   debug:
+#     msg: "{{ config_details }}"
+
+- name: Create configuration to install specific patch on applicable systems
   uri:
-    url: "https://{{ manageengine_server }}/dcapi/patch/manualdeployment"
+    url: "https://{{ manageengine_server }}/api/1.3/patch/installpatch"
     headers:
-      Authorization: "{{ token.json.message_response.authentication.auth_data.auth_token }}"
-      Content-Type: application/patchDeploy.v1+json
+       Authorization: "{{ token.json.message_response.authentication.auth_data.auth_token }}"
+       Content-Type: application/json
+       Accept: application/json
     body_format: json
     validate_certs: no
     body: {
-    "collectionType":  1,
-    "targetData":  "{{ target.json.targetData }}",
-    "refreshMinRetry":  1,
-    "configType":  "computer",
-    "configDetails":  [
-                          {
-                              "details":  [
-                                              {
-                                                  "patchIDs": "{{ patch_ids }}"
-                                              }
-                                          ],
-                              "configName":  "PATCH_INSTALL"
-                          }
-                      ],
-    "applyAtStartupLogon":  false,
-    "continueDeployment":  false,
-    "description":  "{{ description }}",
-    "logonStartupMinRetry":  1,
-    "platform":  "windows",
-    "label":  "{{ label }}",
-    "deploymentPolicyId":  "{{deployment_policy_id}}",
-    "enableRetry":  true,
-    "applyAtRefresh":  false,
-    "noOfRetries":  2,
-    "applyAlways":  false
+    "PatchIDs":"{{ patch_ids }}",
+    "ConfigName":"{{ label }}",
+    "ConfigDescription":"{{ description }}",
+    "actionToPerform":"Deploy",
+    "isOnlyApproved":"false",
+    "DeploymentPolicyTemplateID":"{{deployment_policy_id}}"
     }
     method: POST
-  register: config_details
+  register: Config_details
 
-- name: Print the Patch configuration details 
-  debug:
-    msg: "{{ config_details }}"
+- debug: 
+     msg: "{{ Config_details }}"

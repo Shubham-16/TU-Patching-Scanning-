@@ -5,8 +5,5 @@
   include_vars: ../../manage_engine/vars/vault.yml
   no_log: True
 
-- name: Read CSV while to fetch IPs and filter out Valid IPv4 addresses
-  import_tasks: fetch_ips_from_survey_and_validate.yml
-
 - name: Create survey for Windows Patching Master template
   import_tasks: create_survey_fields.yml
