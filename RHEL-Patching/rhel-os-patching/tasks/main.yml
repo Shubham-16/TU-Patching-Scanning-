@@ -151,6 +151,7 @@
 
     - name: Create  directory to move pre-post bkp and log files
       delegate_to: localhost
+      become: no
       file:
         path: /prepatching_configfile_backup/{{ inventory_hostname }}/patching_{{ date }}_{{ time }}
         state: directory
