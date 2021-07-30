@@ -35,23 +35,20 @@
         dest: /{{scan_logs_directory}}/{{scan_name}}_{{ansible_date_time.date}}_{{ansible_date_time.time}}.log
        delegate_to: localhost
 
+     - name: Create a zip format of report file
+       archive:
+        path: /{{scan_logs_directory}}/{{scan_name}}_{{ansible_date_time.date}}_{{ansible_date_time.time}}.log
+        format: zip
+
+
      - name: Send an email with scanning process log file {{date}} {{time}}
        include_role:
         name: common/send_email
        vars:
         mail_subject:  Scanning Log file for {{scan_name}}
         mail_body: 'Please find the attached log file for scan {{scan_name}} on Rapid7 InsightVM'
-        attachment_file: "/{{scan_logs_directory}}/{{scan_name}}_{{ansible_date_time.date}}_{{ansible_date_time.time}}.log"
-      #  mail:
-      #   host: smtp.gmail.com
-      #   port: 587
-      #   username: "{{smtp_username}}"
-      #   password: "{{smtp_password}}"
-      #   to: "{{ email_id }}"
-      #   subject: Scanning Log file for {{scan_name}}
-      #   body: 'Hi team, please find the attached log file for scan {{scan_name}} on Rapid7 InsightVM'
-      #   attach: "/{{scan_logs_directory}}/{{scan_name}}_{{ansible_date_time.date}}_{{ansible_date_time.time}}.log"
-       
+        attachment_file: "/{{scan_logs_directory}}/{{scan_name}}_{{ansible_date_time.date}}_{{ansible_date_time.time}}.log.zip"
+
         
 
     rescue:
