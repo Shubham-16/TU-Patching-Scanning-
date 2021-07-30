@@ -1,7 +1,6 @@
 ---
 - hosts: localhost
   vars:
-     patch_list: {}
      filtered_patches: {}
      filtered_patch_description: []
      json_data: []
