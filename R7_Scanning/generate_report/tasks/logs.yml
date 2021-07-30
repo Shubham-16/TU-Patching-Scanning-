@@ -48,7 +48,7 @@
        vars:
         mail_subject:  Scanning Log file for {{scan_name}}
         mail_body: 'Please find the attached log file for scan {{scan_name}} performed on Rapid7 InsightVM'
-        attachment_file: "/{{scan_logs_directory}}/{{scan_name}}_{{ansible_date_time.date}}_{{ansible_date_time.time}}.log.zip"
+        attachment_file: "/{{scan_logs_directory}}/{{scan_name}}_{{ansible_date_time.date}}_{{ansible_date_time.time}}.log.gz"
     
     rescue:
      - name: Send an email if any task fails {{date}} {{time}}
