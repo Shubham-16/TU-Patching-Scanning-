@@ -1,0 +1,21 @@
+---
+# vars file for populate_survey
+manageEngine_workflow_template_id: 61
+survey_body: {
+    "name": "",
+    "description": "",
+    "spec": [
+        {
+            "question_name": "Patch List",
+            "question_description": "Select the patches to be installed on target machines",
+            "required": true,
+            "type": "multiselect",
+            "variable": "patch_list",
+            "min": null,
+            "max": null,
+            "default": "",
+            "choices": "{{ filtered_patch_description }}",
+            "new_question": true
+        }
+    ]
+}

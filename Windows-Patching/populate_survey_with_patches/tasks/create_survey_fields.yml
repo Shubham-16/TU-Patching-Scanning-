@@ -142,7 +142,7 @@
 #     msg: "There are no patches available for the target machines. Hence terminating the job template with ID {{ tower_job_id }} and sending logs in a seperate email."
 #   when: filtered_patches | length == 0
 
-- name: Copy the name and ID of all the applicable patches as well as resource IDs into a file
+- name: Copy the name and ID of all the applicable patches into a file
   copy: 
       content: "{ 'patches': {{ filtered_patches }} }"
       dest: /tmp/patch.json
@@ -153,27 +153,6 @@
 - debug: 
      msg: "{{ json_data }}"
 
-- name: fetch all deployment policies 
-  uri:
-    url: "https://{{ manageengine_server }}/api/1.3/patch/deploymentpolicies"
-    headers:
-       Authorization: "{{ token.json.message_response.authentication.auth_data.auth_token }}"
-    method: GET
-    validate_certs: no
-  register: dp
-
-- name: print deployment policies list
-  debug:
-     msg: "{{ dp }}"
-
-- name: Filter Out deploymnet policies name and add it to list
-  set_fact:
-     deployment_policies: "{{ deployment_policies + [item.template_name] }}"
-  loop: "{{dp.json.message_response.deploymentpolicies}}"
-
-- name: print deployment policies list
-  debug:
-     msg: "{{ deployment_policies }}"
 
 - name: Create Survey vars 
   uri:

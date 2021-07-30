@@ -1,5 +1,6 @@
 ---
-# vars file for populate_survey
+# vars file for populate_survey_with_server_based_on_patch
+
 manageEngine_workflow_template_id: 61
 survey_body: {
     "name": "",
@@ -30,15 +31,15 @@ survey_body: {
             "new_question": true
         },
         {
-            "question_name": "Patch List",
-            "question_description": "Select the patches to be installed on target machines",
+            "question_name": "server List",
+            "question_description": "Select the server on which the selected patches will be installed",
             "required": true,
             "type": "multiselect",
-            "variable": "patch_list",
+            "variable": "server_list",
             "min": null,
             "max": null,
             "default": "",
-            "choices": "{{ filtered_patch_description }}",
+            "choices": "{{ server_name }}",
             "new_question": true
         },
         {

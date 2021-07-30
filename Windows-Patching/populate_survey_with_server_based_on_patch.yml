@@ -1,0 +1,12 @@
+---
+- hosts: localhost
+  vars:
+     json_data: []
+     server_data: []
+     patch_ids: []
+     servers: {}
+     server_name: []
+     deployment_policies: []
+  tasks:
+    - include_role:
+          name: populate_survey_with_server_based_on_patch

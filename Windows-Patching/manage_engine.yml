@@ -4,7 +4,9 @@
      configuration_exists: 0
      deployment_policy_id: ""
      json_data: []
+     server_data: []
      patch_ids: []
+     resource_ids: []
   tasks:
     - include_role:
           name: manage_engine
