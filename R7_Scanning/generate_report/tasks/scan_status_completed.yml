@@ -95,7 +95,7 @@
         
         - name: Delay some time for report generation {{date}} {{time}}
           wait_for: 
-           timeout: 128
+           timeout: "{{ report_generation_time }}"
     
         - name: Create a directory to store scanned reports {{date}} {{time}}
           file:
