@@ -26,7 +26,7 @@ survey_spec_body: {
         },
         {
             "question_name": "Hosts file name",
-            "question_description": "Upload a .csv file with list of Ipv4 address at Ansible Tower VM location /home/Hosts_CSV_Files. Please provide the name of the uploaded .csv file",
+            "question_description": "Upload a .csv file with list of Ipv4 address at Ansible Tower VM location /home/Host_CSV_Files. Please provide the name of the uploaded .csv file",
             "required": true,
             "type": "text",
             "variable": "csv_filename",
