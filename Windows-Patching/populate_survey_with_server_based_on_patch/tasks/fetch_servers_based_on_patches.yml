@@ -16,7 +16,7 @@
   when: item.value in patch_list
   with_dict: "{{ json_data.patches }}"
 
-- import_tasks: fetch_servers_based_on_patch.yml
+- include_tasks: fetch_servers_based_on_patch.yml
   loop: "{{ patch_ids }}"
 
 - name: Print all the servers for which the patch is applicable
