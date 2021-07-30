@@ -35,7 +35,7 @@
         dest: /{{scan_logs_directory}}/{{scan_name}}_{{ansible_date_time.date}}_{{ansible_date_time.time}}.log
        delegate_to: localhost
 
-     - name: Create a zip format of report file
+     - name: Create a zip format of log file
        become: yes
        archive:
         path: /{{scan_logs_directory}}/{{scan_name}}_{{ansible_date_time.date}}_{{ansible_date_time.time}}.log
