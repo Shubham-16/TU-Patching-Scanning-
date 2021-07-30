@@ -1,2 +1,9 @@
 ---
 # tasks file for populate_survey_with_server_based_on_patch
+
+- name: Include vault file 
+  include_vars: ../../manage_engine/vars/vault.yml
+  no_log: True
+
+- name: Create survey 
+  import_tasks: fetch_servers_based_on_patches.yml
