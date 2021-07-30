@@ -17,12 +17,16 @@
           return_content: yes
           method: GET
         register: report_details
+        until: '"{{ report_details.json.status }}" != "running" '
+        retries:  "{{ retry_no }}"
+        delay: "{{ delay_time }}"
+
           
       - name: Set the report url
         set_fact:
           report_url: "{{ report_details.json.uri }}"
       - debug: 
-          msg: "Report details:{{ report_details.content }}, Report file download url: {{ report_url }}"
+          msg: "Report generation status: {{ report_details.json.status }},Report details:{{ report_details.content }}, Report file download url: {{ report_url }}"
     rescue:
       - name: Send an email if any task fails {{date}} {{time}}
         include_role:

@@ -17,7 +17,7 @@ report_req_body : {
   }
 retry_no: 100
 delay_time: 120
-#report_directory: root/Rapid7_Scan_Reports2
+report_generation_time: 180
 report_directory: var/log/Rapid7_Scan_Reports
 scan_logs_directory: var/log/Rapid7_Scan_Logs
 date: "{{ lookup('pipe', 'date +%Y-%m-%d')}}"
