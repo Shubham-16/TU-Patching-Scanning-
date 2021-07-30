@@ -154,7 +154,6 @@
       file:
         path: /prepatching_configfile_backup/{{ inventory_hostname }}/patching_{{ date }}_{{ time }}
         state: directory
-      become: no
       run_once: true
 
     - name: Transferring log file to Ansible Tower
