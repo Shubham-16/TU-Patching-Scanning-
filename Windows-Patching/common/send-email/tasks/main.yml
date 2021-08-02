@@ -6,6 +6,8 @@
       mail:
         host: "{{ MAIL_HOST }}"
         port: "{{ MAIL_PORT }}"
+        username: "{{ username }}"
+        password: "{{ password }}"
         to: "User < {{ receiver_email }}>"
         subject: "{{ mail_subject }}"
         subtype: html
