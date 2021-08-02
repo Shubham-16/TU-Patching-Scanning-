@@ -19,15 +19,15 @@
     validate_certs: no
   register: patches
 
-- name: Filter all the  patches and create a list 
+- name: Create a list of patches and a dictionary with id and patch description mapped
   set_fact:
-    patch_list: '{{ patch_list | combine({item.patch_id: item.patch_description + "  ||  " + item.update_name}) }}'
-  # when: item.update_name == "Security Updates" or item.update_name == "Rollups"
+    filtered_patches: '{{ filtered_patches | combine({item.patch_id: item.patch_description + "  ||  " + item.update_name}) }}'
+    filtered_patch_description: '{{ filtered_patch_description + [item.patch_description + "  ||  " + item.update_name] }}'
   loop: "{{ patches.json.message_response.allpatches }}"
 
 - name: Print the patch list 
   debug:
-    msg: "{{ patch_list }} --- {{ patch_list | length }}"
+    msg: "{{ filtered_patches }} --- {{ filtered_patches | length }}"
 
 - name: Send Email if there are no patches available 
   include_role:
@@ -35,22 +35,16 @@
   vars:
     mail_subject: No Patches available
     mail_body: '<p>There are no patches available for the target machines. Hence terminating the job template with ID <b>"{{ tower_job_id }}"</b> and sending logs in a seperate email</p>' 
-  when: patch_list | length == 0
+  when: filtered_patches | length == 0
 
 - name: Fail if there are no patches available 
   fail: 
     msg: "There are no patches available for the target machines. Hence terminating the job template with ID {{ tower_job_id }} and sending logs in a seperate email. "
-  when: patch_list | length == 0
-
-- name: Create a list of patches and a dictionary with id and patch description mapped
-  set_fact:
-    filtered_patches: '{{ filtered_patches | combine({item.key: item.value}) }}'
-    filtered_patch_description: '{{ filtered_patch_description + [item.value] }}'
-  with_dict: "{{ patch_list }}"
+  when: filtered_patches | length == 0
 
 - name: Print all missing patches
   debug:
-     msg: "{{ filtered_patches }} ------ {{ filtered_patches | length }}-------{{ filtered_patch_description }}"
+     msg: "{{ filtered_patch_description }}"
 
 - name: Copy the name and ID of all the applicable patches as well as resource IDs into a file
   copy: 
