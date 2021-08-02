@@ -37,7 +37,7 @@ survey_body: {
             "variable": "deployment_policy",
             "min": null,
             "max": null,
-            "default": "Data Center",
+            "default": "Deploy any time at the earliest",
             "choices": "{{ deployment_policies }}",
             "new_question": true
         },
