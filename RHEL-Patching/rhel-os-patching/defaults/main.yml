@@ -1,5 +1,5 @@
 ---
-satellite_organization: GSLab
+satellite_organization: GSLAB
 process_name: httpd
 uptime_limit: 120  #in days
 disk_space_limit: 80  #disk used in percentage.

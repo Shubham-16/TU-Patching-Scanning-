@@ -42,13 +42,39 @@
         status: "ERROR"
       when: res.stdout_lines[0] != "Current"
 
+    # task to display patches to be deploye
+    - name: Getting list of patches to be deploy
+      shell: echo "no" | yum update | sed -n '/Package/,/Transaction/p' > /tmp/patch_list.txt && cat /tmp/patch_list.txt
+      register: output
+
+    - name: Following patckages will be installed on host {{ inventory_hostname }}
+      debug:
+        msg: "{{ output.stdout_lines[:-1] }}"
+      when: output.stdout_lines | length != 0
+
+    - name: No patch list found
+      debug:
+          msg: "There are no patches found to be deploy"
+      when: output.stdout_lines | length == 0
+
+    - name: Create a file with content of patch details.  
+      delegate_to: localhost
+      become: no
+      copy:
+        dest: "/tmp/patch_list.txt"
+        content: |
+                 {{ output.stdout_lines[:-1] }}
+      when: output.stdout_lines | length != 0
+      register: patch_list_file
+
     - name: Sending an email when ready to patch.
       include_role:
         name: common/send-email
       vars:
           mail_subject: Patching will start soon.
-          mail_body: '<p> We are ready to patch on host <b> {{ inventory_hostname }} </b>, we will notify you after patching. </p>'
-      when: proccess_status.stdout == "inactive" and disk_space_status.stdout == "suffiecient_space" and res.stdout_lines[0] == "Current"
+          mail_body: '<p> We are ready to patch on host <b> {{ inventory_hostname }} </b>, Kindly refer attached file to get patches to be deployed. <br> we will notify you after patching. </p>'
+          attachment_file: "/tmp/patch_list.txt"
+      when: proccess_status.stdout == "inactive" and disk_space_status.stdout == "suffiecient_space" and res.stdout_lines[0] == "Current" and patch_list_file is defined
       
     - name: Including details about the patch in log file
       include: log_file.yml
@@ -58,7 +84,7 @@
       when: proccess_status.stdout == "inactive" and disk_space_status.stdout == "suffiecient_space" and res.stdout_lines[0] == "Current"
 
     - name: Pre validation checks of a host
-      include: patch.yml
+      include: pre_patch.yml
       vars:
         date: "{{ lookup('pipe', 'date +%Y-%m-%d')}}"
         time: "{{ lookup('pipe', 'date +%H:%M:%S')}}"
@@ -95,15 +121,15 @@
       when: proccess_status.stdout == "inactive" and disk_space_status.stdout == "suffiecient_space" and res.stdout_lines[0] == "Current" and yum_update
 
     - name: Post validation checks of a host
-      include: patch.yml
+      include: post_patch.yml
       vars:
         date: "{{ lookup('pipe', 'date +%Y-%m-%d')}}"
         time: "{{ lookup('pipe', 'date +%H:%M:%S')}}"
     
     - name: difference in system configuration before patching and after patching
       shell: |
-        cd /var/log/
-        diff -y --suppress-common-lines bkp_*  | wc -l
+        cd /prepatching_configfile_backup/{{ inventory_hostname }}/patching_{{ date }}_{{ time }}
+        diff -y --suppress-common-lines pre_patch post_patch  | wc -l
       register: diff_out
       ignore_errors: true
 
@@ -117,19 +143,43 @@
     - name: debug diff of worldcount
       debug:
         msg: "{{diff_out.stdout}}"
-  
-  always:
-    - name: Creates archive directory to move bkp files
-      file:
-        path: /var/log/patching_archive
-        state: directory
     
-    - name: Copy all the previously created bkp files to archive folder
-      shell: |
-          cd /var/log/
-          mv bkp_* /var/log/patching_archive
-      when: ( pre_checks is defined ) and (pre_checks | length > 0)
-      ignore_errors: true
+  always:
+    - set_fact:
+        date: "{{ lookup('pipe', 'date +%Y-%m-%d')}}"
+        time: "{{ lookup('pipe', 'date +%H:%M:%S')}}"
+
+    - name: Create  directory to move pre-post bkp and log files
+      delegate_to: localhost
+      become: no
+      file:
+        path: /prepatching_configfile_backup/{{ inventory_hostname }}/patching_{{ date }}_{{ time }}
+        state: directory
+      run_once: true
+
+    - name: Transferring log file to Ansible Tower
+      fetch:
+         src: /tmp/patching_{{ansible_date_time.date}}_{{ansible_date_time.time}}.log
+         dest: /prepatching_configfile_backup/{{ inventory_hostname }}/patching_{{ date }}_{{ time }}/
+         flat: yes
+
+    - name: Unarchive the folder on Ansible tower
+      run_once: true
+      delegate_to: localhost
+      become: no
+      unarchive:
+        dest: /prepatching_configfile_backup/{{ inventory_hostname }}/patching_{{ date }}_{{ time }}/
+        src: /tmp/pre_patch.gz
+      when: pre_checks is defined and transfer_pre_patch_archive is defined
+    
+    - name: Unarchive the folder on Ansible tower
+      run_once: true
+      delegate_to: localhost
+      become: no
+      unarchive:
+        dest: /prepatching_configfile_backup/{{ inventory_hostname }}/patching_{{ date }}_{{ time }}/
+        src: /tmp/post_patch.gz
+      when: post_checks is defined and transfer_post_patch_archive is defined
 
     - name: cleanup all unused created files
       include: cleanup.yml
