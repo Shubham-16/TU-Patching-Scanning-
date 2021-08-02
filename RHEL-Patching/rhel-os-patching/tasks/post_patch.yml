@@ -1,0 +1,34 @@
+- name: Server configurations after patching
+  shell: |
+      mkdir /tmp/post_patch; cd /tmp/post_patch
+      ifconfig -a |tee ifconfig ; cat /etc/fstab| tee fstab;df -hP |tee df;netstat -nr |tee netstat ; cat /etc/grub.conf |tee grub.conf;vgdisplay |tee vg ; lvdisplay |tee lv ;mount |tee mount; cat /etc/resolv.conf |tee resolve.conf;cat /proc/net/bonding/bond* | bond; cp -av /etc/sysconfig/network-scripts/ifcfg* .;clustat |tee cluster; crm status >> cluster ;dmidecode -bios > dmidecode ; dmidecode -t1 >> dmidecode;fdisk -l|tee fdisk;multipath -ll|tee multipath;cat /etc/hosts|tee hosts;
+  register: post_checks
+
+# - name: Transferring directory from server to Ansible Tower
+#   fetch:
+#     src: /tmp/post_patch
+#     dest: /test_prepatch/{{ inventory_hostname }}/patching_{{ date }}_{{ time }}
+
+- name: Archive the post_patch folder
+  archive:
+    path: /tmp/post_patch
+    dest: /tmp/post_patch.gz
+    remove: yes
+    force_archive: true
+  register: post_patch_archive
+
+- name: Transferring file from server to Ansible Tower
+  fetch:
+    src: /tmp/post_patch.gz
+    dest: /tmp/post_patch.gz
+    flat: yes
+  when: post_patch_archive is defined
+  register: transfer_post_patch_archive
+
+- name: Including details about the server confi in log file
+  include: log_file.yml
+  vars:
+     content: "Fetching the details of the host after the patching and storing it /prepatching_configfile_backup"
+     status: "INFO"
+  when: post_checks
+ 

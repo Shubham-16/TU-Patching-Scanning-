@@ -1,0 +1,29 @@
+- name: Server configurations before Patching
+  shell: |
+      mkdir /tmp/pre_patch; cd /tmp/pre_patch
+      ifconfig -a |tee ifconfig ; cat /etc/fstab| tee fstab;df -hP |tee df;netstat -nr |tee netstat ; cat /etc/grub.conf |tee grub.conf;vgdisplay |tee vg ; lvdisplay |tee lv ;mount |tee mount; cat /etc/resolv.conf |tee resolve.conf;cat /proc/net/bonding/bond* | bond; cp -av /etc/sysconfig/network-scripts/ifcfg* .;clustat |tee cluster; crm status >> cluster ;dmidecode -bios > dmidecode ; dmidecode -t1 >> dmidecode;fdisk -l|tee fdisk;multipath -ll|tee multipath;cat /etc/hosts|tee hosts;
+  register: pre_checks
+
+- name: Archive the pre_patch folder
+  archive:
+    path: /tmp/pre_patch
+    dest: /tmp/pre_patch.gz
+    remove: yes
+    force_archive: true
+  register: pre_patch_archive
+
+- name: Transferring file from server to Ansible Tower
+  fetch:
+    src: /tmp/pre_patch.gz
+    dest: /tmp/pre_patch.gz
+    flat: yes
+  when: pre_patch_archive is defined
+  register: transfer_pre_patch_archive
+
+- name: Including details about the server config in log file
+  include: log_file.yml
+  vars:
+     content: "Fetching the details of the host before the patching and storing it /prepatching_configfile_backup"
+     status: "INFO"
+  when: pre_checks
+ 

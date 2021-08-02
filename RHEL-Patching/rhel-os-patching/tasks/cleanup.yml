@@ -7,6 +7,38 @@
     state: absent
   when:  ( yum_update is defined) and (yum_update | length > 0) and ( yum_update or yum_update.failed )
 
+
+- name: Delete patch list file
+  delegate_to: localhost
+  become: no
+  file:
+    path: /tmp/patch_list.txt
+    state: absent
+  when: patch_list_file is defined
+
+- name: Delete patch archive files from ansible tower host
+  delegate_to: localhost
+  become: no
+  file:
+    path: /tmp/{{ item }}
+    state: absent
+  loop:
+    - pre_patch.gz
+    - post_patch.gz
+  when: ( transfer_pre_patch_archive is defined ) and ( transfer_post_patch_archive is defined ) 
+
+
+
+- name: Delete patch archive files from remote host
+  file:
+    path: /tmp/{{ item }}
+    state: absent
+  when: patch_list_file is defined
+  loop:
+    - pre_patch.gz
+    - post_patch.gz
+  when: ( pre_patch_archive is defined ) and ( post_patch_archive is defined )
+
 - name: Delete Katello Consumer File
   become: yes
   file:
