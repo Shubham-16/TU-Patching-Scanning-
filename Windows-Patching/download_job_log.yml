@@ -2,7 +2,6 @@
 
 - hosts: localhost
   # become_method: sudo
-  gather_facts: no
   vars:
      job_ids: []
   tasks:
